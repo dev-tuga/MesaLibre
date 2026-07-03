@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import { getTableByQrToken } from "@/features/menu/queries";
 import { getOpenOrder, toBill } from "@/features/orders/queries";
 import { getPaymentProvider } from "@/features/payments/providers";
@@ -118,10 +116,12 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
     };
   }
 
-  const base = `/r/${slug}/${qrToken}`;
-  for (const path of [base, `${base}/cuenta`, `${base}/cuenta/pagar`]) {
-    revalidatePath(path);
-  }
+  // No revalidatePath here, on purpose: revalidating would make the router
+  // re-render the pay page as part of this action's response, and once the
+  // bill is settled that page redirects away — unmounting the success
+  // screen the payer is about to see. All public pages are dynamic (no
+  // client-side caching), so other views pick the payment up on their next
+  // fetch, and amounts are always recomputed server-side anyway.
 
   return {
     ok: true,
