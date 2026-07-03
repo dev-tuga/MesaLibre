@@ -45,6 +45,35 @@ The admin panel lives at `/dashboard` (login at `/login`). The seed creates a de
 `admin@lapicada.cl` / `picada-demo-2026`. Remember to set a real `AUTH_SECRET` in `.env`
 (`openssl rand -base64 32`).
 
+## Mobile testing on your LAN
+
+To try the guest flow from a real phone (scan the QR, order, pay), the phone and your machine
+must be on the same WiFi network:
+
+1. **Find your machine's local IP.**
+   - Windows: `ipconfig` → look for "IPv4 Address" (e.g. `192.168.1.50`).
+   - macOS/Linux: `ifconfig` or `ip addr` → the `192.168.x.x` / `10.x.x.x` address of your
+     WiFi interface.
+2. **Point the base URL at that IP** in `.env`, so generated table links and QR codes use it:
+
+   ```bash
+   NEXT_PUBLIC_APP_BASE_URL="http://192.168.1.50:3000"
+   ```
+
+3. **Run the dev server bound to all interfaces:**
+
+   ```bash
+   pnpm dev:lan
+   ```
+
+4. **Open the firewall if needed.** If the phone cannot reach the app, allow inbound TCP 3000
+   (Windows Defender: allow Node.js on private networks; Linux: `sudo ufw allow 3000/tcp`).
+5. **Scan a table QR** from `/dashboard/mesas` (or use a URL printed by `pnpm db:seed`) and the
+   phone lands directly on that table's menu.
+
+Admin login also works over the LAN IP: sessions are host-agnostic (`trustHost` is enabled, see
+ADR-010), so no extra auth configuration is needed in development.
+
 ## Scripts
 
 | Script              | Description                    |

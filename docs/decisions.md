@@ -161,3 +161,26 @@ marked unavailable).
 **Consequences:** No session table or OAuth setup; revoking a session requires rotating
 `AUTH_SECRET` or waiting for JWT expiry, acceptable for an MVP. Multi-restaurant support is
 already structural: a second restaurant's admin simply sees their own scoped data.
+
+---
+
+## ADR-010: Explicit base URL for generated links instead of request inference
+
+**Status:** accepted
+
+**Context:** QR codes and seeded table links must contain absolute URLs that a _phone_ can reach.
+Inferring the host from the incoming request breaks in the common dev scenario: the developer
+browses the dashboard at `localhost:3000`, so inferred QR URLs would point the phone at its own
+localhost. The URL also has to be known outside any request (seed script).
+
+**Decision:** A single `NEXT_PUBLIC_APP_BASE_URL` env var (Zod-validated, default
+`http://localhost:3000`, trailing slashes normalized) is the source of truth for every generated
+absolute URL, built through the pure `buildTableUrl()` helper. `pnpm dev:lan` binds the dev server
+to `0.0.0.0` so phones on the same network can connect. NextAuth keeps working over the LAN IP
+because `trustHost: true` derives auth callback URLs from each request's Host header — no
+`AUTH_URL` pinning.
+
+**Consequences:** One env var to flip when demoing on a LAN or deploying behind a domain. If the
+var is stale, QR codes point at the wrong host — the README documents the setup steps. Pinning
+`AUTH_URL` would break same-app access through two hosts (localhost for the admin, LAN IP for
+phones), which is exactly the dev workflow we want.
