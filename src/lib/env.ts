@@ -10,6 +10,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   /** Payment rail to use. Only the simulated provider exists for now. */
   PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),
+  /** Session signing secret for NextAuth. Generate with `openssl rand -base64 32`. */
+  AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
 });
 
 function loadEnv(): z.infer<typeof envSchema> {
