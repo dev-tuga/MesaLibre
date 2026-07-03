@@ -17,6 +17,18 @@ model Restaurant {
 
   tables     Table[]
   categories Category[]
+  admins     AdminUser[]
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  restaurantId String
+  createdAt    DateTime @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
 
 model Table {

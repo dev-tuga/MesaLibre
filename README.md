@@ -41,6 +41,10 @@ The app is available at [http://localhost:3000](http://localhost:3000). The seed
 restaurant **La Picada del Puerto** with 8 tables; the table URLs are printed to the console, e.g.
 `/r/la-picada-del-puerto/demo-mesa-1-7f3k`.
 
+The admin panel lives at `/dashboard` (login at `/login`). The seed creates a demo admin:
+`admin@lapicada.cl` / `picada-demo-2026`. Remember to set a real `AUTH_SECRET` in `.env`
+(`openssl rand -base64 32`).
+
 ## Scripts
 
 | Script              | Description                    |

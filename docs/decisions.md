@@ -140,3 +140,24 @@ charges. The active provider is selected by the `PAYMENT_PROVIDER` env var via a
 **Consequences:** Integrating a real acquirer is additive: implement the interface, register it in
 the factory, set the env var. Server actions, order closing and the UI stay untouched. Webhook
 based flows (async confirmation) would extend the interface but not the callers' contract.
+
+---
+
+## ADR-009: Credentials auth with JWT sessions, scoped by restaurant
+
+**Status:** accepted
+
+**Context:** Only restaurant staff need accounts (guests are anonymous, identified by their
+table's QR token). The admin panel must never leak data across restaurants, and the MVP should not
+depend on an external identity provider.
+
+**Decision:** NextAuth (v5) with a single Credentials provider over the `AdminUser` table
+(bcrypt-hashed passwords) and stateless JWT sessions. The JWT carries `restaurantId`; every admin
+query and server action re-reads the session via `getAdminSession()` and filters by that id —
+authorization is enforced at the data layer on every call, never only in layouts or middleware.
+Destructive menu operations are blocked when history exists (products with sales can only be
+marked unavailable).
+
+**Consequences:** No session table or OAuth setup; revoking a session requires rotating
+`AUTH_SECRET` or waiting for JWT expiry, acceptable for an MVP. Multi-restaurant support is
+already structural: a second restaurant's admin simply sees their own scoped data.

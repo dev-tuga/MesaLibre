@@ -24,6 +24,7 @@ type PaymentPanelProps = {
 };
 
 type SuccessState = {
+  orderId: string;
   totalClp: number;
   orderClosed: boolean;
 };
@@ -57,7 +58,11 @@ export function PaymentPanel({ slug, qrToken, remainingClp }: PaymentPanelProps)
     startTransition(async () => {
       const result = await payOrder({ slug, qrToken, splitCount, tip });
       if (result.ok) {
-        setSuccess({ totalClp: result.totalClp, orderClosed: result.orderClosed });
+        setSuccess({
+          orderId: result.orderId,
+          totalClp: result.totalClp,
+          orderClosed: result.orderClosed,
+        });
         router.refresh();
       } else {
         toast.error(result.error);
@@ -77,15 +82,29 @@ export function PaymentPanel({ slug, qrToken, remainingClp }: PaymentPanelProps)
           </p>
         </div>
         {success.orderClosed ? (
-          <p className="font-medium">La cuenta quedó pagada por completo. ¡Buen provecho!</p>
+          <>
+            <p className="font-medium">La cuenta quedó pagada por completo. ¡Buen provecho!</p>
+            <div className="flex flex-col gap-2">
+              <Button asChild>
+                <Link href={`/r/${slug}/${qrToken}/calificar/${success.orderId}`}>
+                  Calificar el servicio
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={`/r/${slug}/${qrToken}`}>Volver a la carta</Link>
+              </Button>
+            </div>
+          </>
         ) : (
-          <p className="text-muted-foreground text-sm">
-            Aún queda saldo por pagar entre el resto de la mesa.
-          </p>
+          <>
+            <p className="text-muted-foreground text-sm">
+              Aún queda saldo por pagar entre el resto de la mesa.
+            </p>
+            <Button asChild variant="outline">
+              <Link href={`/r/${slug}/${qrToken}/cuenta`}>Volver a la cuenta</Link>
+            </Button>
+          </>
         )}
-        <Button asChild variant="outline">
-          <Link href={`/r/${slug}/${qrToken}/cuenta`}>Volver a la cuenta</Link>
-        </Button>
       </div>
     );
   }

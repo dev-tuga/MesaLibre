@@ -28,6 +28,7 @@ export type PayOrderInput = z.infer<typeof payOrderSchema>;
 export type PayOrderResult =
   | {
       ok: true;
+      orderId: string;
       amountClp: number;
       tipClp: number;
       totalClp: number;
