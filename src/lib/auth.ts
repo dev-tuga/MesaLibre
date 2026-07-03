@@ -26,7 +26,10 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: env.AUTH_SECRET,
-  // Self-hosted deployment: the Host header is controlled by our own proxy.
+  // Trust the incoming Host header: in development this lets the app be
+  // reached by LAN IP (mobile testing) and in production the host is
+  // controlled by our own proxy. Auth URLs are derived per-request, so no
+  // AUTH_URL needs to be configured.
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },

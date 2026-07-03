@@ -63,7 +63,13 @@ export function PaymentPanel({ slug, qrToken, remainingClp }: PaymentPanelProps)
           totalClp: result.totalClp,
           orderClosed: result.orderClosed,
         });
-        router.refresh();
+        // Refreshing after the *final* payment would re-run the page's
+        // server component, which redirects settled bills back to the
+        // bill page and would unmount this success screen (and its link
+        // to the review). Partial payments do want fresh balances.
+        if (!result.orderClosed) {
+          router.refresh();
+        }
       } else {
         toast.error(result.error);
         router.refresh();

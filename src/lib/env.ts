@@ -12,6 +12,15 @@ const envSchema = z.object({
   PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),
   /** Session signing secret for NextAuth. Generate with `openssl rand -base64 32`. */
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
+  /**
+   * Absolute base URL used when generating table links and QR codes.
+   * Point it at your machine's LAN IP (e.g. http://192.168.1.50:3000) to
+   * test the guest flow from a phone on the same network.
+   */
+  NEXT_PUBLIC_APP_BASE_URL: z
+    .url({ message: "NEXT_PUBLIC_APP_BASE_URL must be an absolute URL" })
+    .default("http://localhost:3000")
+    .transform((url) => url.replace(/\/+$/, "")),
 });
 
 function loadEnv(): z.infer<typeof envSchema> {
