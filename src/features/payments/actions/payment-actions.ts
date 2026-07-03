@@ -125,6 +125,7 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
 
   return {
     ok: true,
+    orderId: order.id,
     amountClp: quote.amountClp,
     tipClp: quote.tipClp,
     totalClp: quote.totalClp,
