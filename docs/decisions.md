@@ -1,0 +1,65 @@
+# Architecture Decision Records
+
+Short-form ADRs. Newest at the bottom.
+
+---
+
+## ADR-001: Feature-based structure with thin layers
+
+**Status:** accepted
+
+**Context:** The MVP covers four distinct domains (menu, orders, payments, feedback) that will
+grow at different speeds. A classic layer-first layout (`controllers/`, `models/`, ...) scatters
+each feature across the tree.
+
+**Decision:** Group code by feature under `src/features/*`, each with `components/`, `actions/`,
+`services/` and `schemas/`. Server actions only validate input (Zod) and orchestrate; all business
+logic lives in `services/` as pure functions so it can be unit-tested without a database.
+
+**Consequences:** Slight ceremony for small features, but every rule about money and order state
+ends up in one obvious, testable place.
+
+---
+
+## ADR-002: Prices in CLP as integers
+
+**Status:** accepted
+
+**Context:** The Chilean peso has no decimal subdivision in practice, and floating point math on
+money is a known footgun.
+
+**Decision:** All monetary amounts (`priceClp`, `amountClp`, `tipClp`) are stored and computed as
+`Int`. Formatting to `$12.990` happens only at the presentation layer.
+
+**Consequences:** Split payments must handle integer division remainders explicitly (covered by
+unit tests in the payments service). Supporting other currencies later would require a migration.
+
+---
+
+## ADR-003: Local PostgreSQL via Docker Compose
+
+**Status:** accepted
+
+**Context:** Contributors need a reproducible database without installing PostgreSQL system-wide.
+
+**Decision:** `docker-compose.yml` ships a `postgres:16-alpine` service with credentials matching
+`.env.example`, plus a healthcheck so scripts can wait for readiness.
+
+**Consequences:** Docker becomes a dev dependency. Any PostgreSQL 16 instance works as a drop-in
+replacement by editing `DATABASE_URL`.
+
+---
+
+## ADR-004: Environment validated with Zod at startup
+
+**Status:** accepted
+
+**Context:** Missing or malformed env vars usually surface as confusing runtime errors deep in the
+stack.
+
+**Decision:** `src/lib/env.ts` parses `process.env` with a Zod schema once at module load and
+throws a readable error listing what is wrong. Application code imports `env` and never touches
+`process.env` directly.
+
+**Consequences:** The schema is the single source of truth for configuration; `.env.example` must
+be kept in sync when new variables are added.
