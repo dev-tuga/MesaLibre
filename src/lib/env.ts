@@ -1,0 +1,24 @@
+import { z } from "zod";
+
+/**
+ * Server-side environment variables, validated once at startup.
+ * Import `env` instead of reading `process.env` directly so that a
+ * misconfigured deployment fails fast with a readable error.
+ */
+const envSchema = z.object({
+  DATABASE_URL: z.url({ message: "DATABASE_URL must be a valid connection string" }),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+});
+
+function loadEnv(): z.infer<typeof envSchema> {
+  const result = envSchema.safeParse(process.env);
+
+  if (!result.success) {
+    console.error("Invalid environment variables:", z.treeifyError(result.error));
+    throw new Error("Invalid environment variables. Check your .env file against .env.example.");
+  }
+
+  return result.data;
+}
+
+export const env = loadEnv();
