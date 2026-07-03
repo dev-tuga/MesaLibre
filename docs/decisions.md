@@ -82,3 +82,22 @@ deleted (`onDelete: Restrict`); the admin flow marks them unavailable instead.
 
 **Consequences:** Historic bills are immutable with respect to menu edits. Re-printing QR codes is
 the escape hatch if a token leaks. Deleting a product with sales history requires archiving it.
+
+---
+
+## ADR-006: Polling instead of websockets for the shared bill
+
+**Status:** accepted
+
+**Context:** Everyone at a table shares one open order and should see additions from other phones
+"in real time". True push (websockets/SSE) adds infrastructure (a stateful server or a third-party
+service) that is out of proportion for an MVP where a few seconds of latency is imperceptible in a
+restaurant setting.
+
+**Decision:** The bill page mounts a tiny client component that calls `router.refresh()` every 5
+seconds; mutations also revalidate the affected paths, so the author of a change sees it
+instantly. The rest of the page stays server-rendered.
+
+**Consequences:** Worst-case staleness equals the polling interval and each refresh re-runs the
+page query. If the product outgrows this, the `AutoRefresh` component is the single place to swap
+in SSE or websockets.

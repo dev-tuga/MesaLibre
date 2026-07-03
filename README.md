@@ -50,6 +50,7 @@ restaurant **La Picada del Puerto** with 8 tables; the table URLs are printed to
 | `pnpm lint`         | ESLint                         |
 | `pnpm format`       | Format the codebase (Prettier) |
 | `pnpm format:check` | Check formatting               |
+| `pnpm test`         | Unit tests (Vitest)            |
 | `pnpm db:migrate`   | Prisma migrations (dev)        |
 | `pnpm db:seed`      | Seed demo data (idempotent)    |
 | `pnpm db:studio`    | Prisma Studio                  |
