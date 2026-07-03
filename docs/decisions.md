@@ -63,3 +63,22 @@ throws a readable error listing what is wrong. Application code imports `env` an
 
 **Consequences:** The schema is the single source of truth for configuration; `.env.example` must
 be kept in sync when new variables are added.
+
+---
+
+## ADR-005: Price snapshots on order items and opaque table tokens
+
+**Status:** accepted
+
+**Context:** Two data-model risks: (1) if an order item references only the product, editing a
+price in the admin panel would retroactively change bills that are already open; (2) guests reach
+their table by URL, and a guessable identifier (e.g. the table number) would let anyone open — and
+charge items to — someone else's bill.
+
+**Decision:** `OrderItem` stores `unitPriceClp` copied from the product at the moment it is added.
+`Table` carries a unique `qrToken` (random, unrelated to the table number) and every public route
+resolves the table by token, never by number. Products referenced by order items cannot be hard
+deleted (`onDelete: Restrict`); the admin flow marks them unavailable instead.
+
+**Consequences:** Historic bills are immutable with respect to menu edits. Re-printing QR codes is
+the escape hatch if a token leaks. Deleting a product with sales history requires archiving it.

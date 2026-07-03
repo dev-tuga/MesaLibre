@@ -29,11 +29,17 @@ docker compose up -d
 # 3. Configure environment variables
 cp .env.example .env
 
-# 4. Run the dev server
+# 4. Apply migrations and seed demo data
+pnpm db:migrate
+pnpm db:seed
+
+# 5. Run the dev server
 pnpm dev
 ```
 
-The app is available at [http://localhost:3000](http://localhost:3000).
+The app is available at [http://localhost:3000](http://localhost:3000). The seed creates the demo
+restaurant **La Picada del Puerto** with 8 tables; the table URLs are printed to the console, e.g.
+`/r/la-picada-del-puerto/demo-mesa-1-7f3k`.
 
 ## Scripts
 
@@ -44,6 +50,9 @@ The app is available at [http://localhost:3000](http://localhost:3000).
 | `pnpm lint`         | ESLint                         |
 | `pnpm format`       | Format the codebase (Prettier) |
 | `pnpm format:check` | Check formatting               |
+| `pnpm db:migrate`   | Prisma migrations (dev)        |
+| `pnpm db:seed`      | Seed demo data (idempotent)    |
+| `pnpm db:studio`    | Prisma Studio                  |
 
 ## Architecture
 
