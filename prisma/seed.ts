@@ -1,7 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import { buildTableUrl } from "../src/lib/urls";
+
 const prisma = new PrismaClient();
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_BASE_URL ?? "http://localhost:3000";
 
 /**
  * Demo data: a Chilean restaurant with a realistic menu in CLP.
@@ -173,7 +177,9 @@ async function main() {
   console.log(`  ${restaurant.categories.length} categories, ${productCount} products`);
   console.log(`  ${restaurant.tables.length} tables:`);
   for (const table of restaurant.tables) {
-    console.log(`    Mesa ${table.number}: /r/${restaurant.slug}/${table.qrToken}`);
+    console.log(
+      `    Mesa ${table.number}: ${buildTableUrl(BASE_URL, restaurant.slug, table.qrToken)}`,
+    );
   }
   console.log(`  Admin login: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
 }
