@@ -46,7 +46,8 @@ export default async function DashboardOverviewPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-muted-foreground text-sm">
-            {stats.today.count} pagos · {formatClp(stats.today.tipClp)} en propinas
+            {stats.today.count} {stats.today.count === 1 ? "pago" : "pagos"} ·{" "}
+            {formatClp(stats.today.tipClp)} en propinas
           </CardContent>
         </Card>
         <Card>
