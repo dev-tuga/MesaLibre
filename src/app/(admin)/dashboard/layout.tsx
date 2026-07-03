@@ -20,8 +20,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="bg-muted/40 min-h-screen">
-      <header className="bg-background border-b">
+    <div className="bg-muted/40 min-h-screen print:bg-white">
+      <header className="bg-background border-b print:hidden">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-2 font-semibold">
             <UtensilsCrossed className="size-5" aria-hidden />
