@@ -101,3 +101,42 @@ instantly. The rest of the page stays server-rendered.
 **Consequences:** Worst-case staleness equals the polling interval and each refresh re-runs the
 page query. If the product outgrows this, the `AutoRefresh` component is the single place to swap
 in SSE or websockets.
+
+---
+
+## ADR-007: Split semantics — divide what is left, largest part first
+
+**Status:** accepted
+
+**Context:** Splitting a CLP bill in N equal parts rarely divides exactly (CLP is an integer
+currency), and payers arrive sequentially: by the time the third friend pays, the balance already
+changed. A naive "everyone pays total/N" either loses pesos or double-charges them.
+
+**Decision:** `splitBill(total, parts)` distributes the remainder one peso at a time to the first
+parts (e.g. `10000 / 3 -> [3334, 3333, 3333]`). Each payer splits the _remaining_ balance and pays
+the largest part (`nextShare`). The tip is computed over the payer's own share — the Chilean
+custom — and rounded to the nearest peso. The server always recomputes amounts from the database;
+client-side previews are never trusted. Once a payment exists, the bill is frozen (no more
+adding/removing items) so the balance cannot shift mid-payment.
+
+**Consequences:** Any sequence of payers closes the bill exactly, with at most $1 of difference
+between shares. Unit tests cover exact splits, remainders, sequential payer flows and tip
+rounding.
+
+---
+
+## ADR-008: Payments behind a `PaymentProvider` interface
+
+**Status:** accepted
+
+**Context:** The MVP must demonstrate the full pay-at-table flow without moving real money, but
+production would use a Chilean rail such as Fintoc or Transbank.
+
+**Decision:** All charging goes through the `PaymentProvider` interface
+(`features/payments/providers/payment-provider.ts`): a single `charge()` call returning
+approved/rejected. `MockPaymentProvider` simulates latency and always approves well-formed
+charges. The active provider is selected by the `PAYMENT_PROVIDER` env var via a factory.
+
+**Consequences:** Integrating a real acquirer is additive: implement the interface, register it in
+the factory, set the env var. Server actions, order closing and the UI stay untouched. Webhook
+based flows (async confirmation) would extend the interface but not the callers' contract.
