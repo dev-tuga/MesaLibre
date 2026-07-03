@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tables     Table[]
+  categories Category[]
+}
+
+model Table {
+  id           String @id @default(cuid())
+  number       Int
+  /// Opaque token embedded in the printed QR code. Knowing the table
+  /// number is not enough to open its bill; the token is required.
+  qrToken      String @unique @default(cuid())
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders     Order[]
+
+  @@unique([restaurantId, number])
+}
+
+model Category {
+  id           String @id @default(cuid())
+  name         String
+  position     Int    @default(0)
+  restaurantId String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  products   Product[]
+
+  @@unique([restaurantId, name])
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  /// Price in Chilean pesos. CLP has no cents, so an integer is exact.
+  priceClp    Int
+  imageUrl    String?
+  available   Boolean @default(true)
+  position    Int     @default(0)
+  categoryId  String
+
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+}
+
+enum OrderStatus {
+  OPEN
+  PAID
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  status    OrderStatus @default(OPEN)
+  tableId   String
+  createdAt DateTime    @default(now())
+  closedAt  DateTime?
+
+  table    Table       @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  items    OrderItem[]
+  payments Payment[]
+  review   Review?
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  productId    String
+  quantity     Int
+  /// Snapshot of the product price at the time it was added, so later
+  /// menu edits never change an already-open bill.
+  unitPriceClp Int
+  createdAt    DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+enum PaymentMethod {
+  CARD
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  orderId     String
+  /// Share of the bill covered by this payment, tip excluded.
+  amountClp   Int
+  tipClp      Int           @default(0)
+  method      PaymentMethod @default(CARD)
+  /// Number of equal parts the bill was split into when this payment
+  /// was made (1 = the payer covered the whole remaining bill).
+  splitCount  Int           @default(1)
+  /// Reference returned by the payment provider.
+  providerRef String?
+  createdAt   DateTime      @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
