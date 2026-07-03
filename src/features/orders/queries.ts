@@ -11,6 +11,10 @@ export async function getOpenOrder(tableId: string) {
         orderBy: { createdAt: "asc" },
         include: { product: { select: { name: true } } },
       },
+      payments: {
+        orderBy: { createdAt: "asc" },
+        select: { id: true, amountClp: true, tipClp: true, createdAt: true },
+      },
     },
   });
 }

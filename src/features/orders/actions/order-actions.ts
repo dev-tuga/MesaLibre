@@ -40,10 +40,19 @@ export async function addItemToOrder(rawInput: unknown): Promise<ActionResult> {
     return { ok: false, error: "El producto ya no está disponible." };
   }
 
-  await prisma.$transaction(async (tx) => {
-    const order =
-      (await tx.order.findFirst({ where: { tableId: table.id, status: "OPEN" } })) ??
-      (await tx.order.create({ data: { tableId: table.id } }));
+  const result = await prisma.$transaction(async (tx) => {
+    const existingOrder = await tx.order.findFirst({
+      where: { tableId: table.id, status: "OPEN" },
+      include: { payments: { select: { id: true }, take: 1 } },
+    });
+
+    // Once someone started paying, the bill is frozen: adding items would
+    // change the balance under the payers' feet.
+    if (existingOrder && existingOrder.payments.length > 0) {
+      return { ok: false as const, error: "La cuenta ya está en proceso de pago." };
+    }
+
+    const order = existingOrder ?? (await tx.order.create({ data: { tableId: table.id } }));
 
     const existingItem = await tx.orderItem.findFirst({
       where: { orderId: order.id, productId: product.id, unitPriceClp: product.priceClp },
@@ -64,7 +73,12 @@ export async function addItemToOrder(rawInput: unknown): Promise<ActionResult> {
         },
       });
     }
+    return { ok: true as const };
   });
+
+  if (!result.ok) {
+    return result;
+  }
 
   for (const path of tablePaths(slug, qrToken)) {
     revalidatePath(path);
@@ -88,12 +102,12 @@ export async function removeOrderItem(rawInput: unknown): Promise<ActionResult> 
   const { count } = await prisma.orderItem.deleteMany({
     where: {
       id: orderItemId,
-      order: { tableId: table.id, status: "OPEN" },
+      order: { tableId: table.id, status: "OPEN", payments: { none: {} } },
     },
   });
 
   if (count === 0) {
-    return { ok: false, error: "El ítem ya no está en la cuenta." };
+    return { ok: false, error: "El ítem ya no se puede quitar de la cuenta." };
   }
 
   for (const path of tablePaths(slug, qrToken)) {

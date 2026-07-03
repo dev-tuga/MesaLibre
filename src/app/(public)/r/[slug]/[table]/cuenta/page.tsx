@@ -10,6 +10,8 @@ import { tableRouteParamsSchema } from "@/features/menu/schemas/route-params";
 import { AutoRefresh } from "@/features/orders/components/auto-refresh";
 import { BillLines } from "@/features/orders/components/bill-lines";
 import { getOpenOrder, toBill } from "@/features/orders/queries";
+import { remainingBalance } from "@/features/payments/services/quote";
+import { formatClp } from "@/lib/format";
 
 type PageProps = {
   params: Promise<{ slug: string; table: string }>;
@@ -29,6 +31,10 @@ export default async function TableBillPage({ params }: PageProps) {
   const order = await getOpenOrder(table.id);
   const bill = toBill(order);
   const menuHref = `/r/${parsed.data.slug}/${parsed.data.table}`;
+
+  const paidClp = order?.payments.reduce((sum, p) => sum + p.amountClp, 0) ?? 0;
+  const remainingClp = remainingBalance(bill.totalClp, paidClp);
+  const hasPayments = paidClp > 0;
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-4 pb-16">
@@ -60,7 +66,34 @@ export default async function TableBillPage({ params }: PageProps) {
         </div>
       ) : (
         <div className="space-y-4">
-          <BillLines slug={parsed.data.slug} qrToken={parsed.data.table} bill={bill} />
+          <BillLines
+            slug={parsed.data.slug}
+            qrToken={parsed.data.table}
+            bill={bill}
+            editable={!hasPayments}
+          />
+
+          {hasPayments ? (
+            <div className="bg-card space-y-1 rounded-xl border p-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Ya pagado</span>
+                <span className="font-medium tabular-nums">−{formatClp(paidClp)}</span>
+              </div>
+              <div className="flex justify-between font-semibold">
+                <span>Queda por pagar</span>
+                <span className="tabular-nums">{formatClp(remainingClp)}</span>
+              </div>
+            </div>
+          ) : null}
+
+          {remainingClp > 0 ? (
+            <Button asChild size="lg" className="w-full">
+              <Link href={`${menuHref}/cuenta/pagar`}>
+                Pagar {hasPayments ? formatClp(remainingClp) : "la cuenta"}
+              </Link>
+            </Button>
+          ) : null}
+
           <p className="text-muted-foreground text-center text-sm">
             La cuenta es compartida: todos en la mesa ven los mismos ítems.
           </p>
