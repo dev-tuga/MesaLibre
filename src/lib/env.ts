@@ -8,6 +8,8 @@ import { z } from "zod";
 const envSchema = z.object({
   DATABASE_URL: z.url({ message: "DATABASE_URL must be a valid connection string" }),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  /** Payment rail to use. Only the simulated provider exists for now. */
+  PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),
 });
 
 function loadEnv(): z.infer<typeof envSchema> {
