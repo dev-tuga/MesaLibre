@@ -35,3 +35,16 @@ export async function getMenu(restaurantId: string) {
 
 export type MenuCategory = Awaited<ReturnType<typeof getMenu>>[number];
 export type TableWithRestaurant = NonNullable<Awaited<ReturnType<typeof getTableByQrToken>>>;
+
+/** Full menu for the admin panel, including unavailable products and empty categories. */
+export async function getMenuForAdmin(restaurantId: string) {
+  return prisma.category.findMany({
+    where: { restaurantId },
+    orderBy: { position: "asc" },
+    include: {
+      products: { orderBy: { position: "asc" } },
+    },
+  });
+}
+
+export type AdminMenuCategory = Awaited<ReturnType<typeof getMenuForAdmin>>[number];

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -122,6 +123,9 @@ const menu: {
 
 const TABLE_COUNT = 8;
 
+const ADMIN_EMAIL = "admin@lapicada.cl";
+const ADMIN_PASSWORD = "picada-demo-2026";
+
 async function main() {
   await prisma.restaurant.deleteMany({ where: { slug: RESTAURANT_SLUG } });
 
@@ -149,6 +153,13 @@ async function main() {
           qrToken: `demo-mesa-${i + 1}-7f3k`,
         })),
       },
+      admins: {
+        create: {
+          email: ADMIN_EMAIL,
+          name: "Carla Fuentes",
+          passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 10),
+        },
+      },
     },
     include: {
       tables: { orderBy: { number: "asc" } },
@@ -164,6 +175,7 @@ async function main() {
   for (const table of restaurant.tables) {
     console.log(`    Mesa ${table.number}: /r/${restaurant.slug}/${table.qrToken}`);
   }
+  console.log(`  Admin login: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
 }
 
 main()
