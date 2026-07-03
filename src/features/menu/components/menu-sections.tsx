@@ -1,7 +1,17 @@
+import type { ReactNode } from "react";
+
 import type { MenuCategory } from "@/features/menu/queries";
 import { formatClp } from "@/lib/format";
 
-export function MenuSections({ categories }: { categories: MenuCategory[] }) {
+type MenuProduct = MenuCategory["products"][number];
+
+type MenuSectionsProps = {
+  categories: MenuCategory[];
+  /** Optional slot rendered under each product, e.g. an "add to bill" button. */
+  productAction?: (product: MenuProduct) => ReactNode;
+};
+
+export function MenuSections({ categories, productAction }: MenuSectionsProps) {
   return (
     <div className="space-y-8">
       {categories.map((category) => (
@@ -26,7 +36,10 @@ export function MenuSections({ categories }: { categories: MenuCategory[] }) {
                     <p className="text-muted-foreground mt-0.5 text-sm">{product.description}</p>
                   ) : null}
                 </div>
-                <p className="shrink-0 font-semibold tabular-nums">{formatClp(product.priceClp)}</p>
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <p className="font-semibold tabular-nums">{formatClp(product.priceClp)}</p>
+                  {productAction?.(product)}
+                </div>
               </li>
             ))}
           </ul>
