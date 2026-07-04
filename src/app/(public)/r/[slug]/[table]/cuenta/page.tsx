@@ -36,7 +36,7 @@ export default async function TableBillPage({ params }: PageProps) {
   const hasPayments = paidClp > 0;
 
   return (
-    <main className="mx-auto min-h-screen max-w-xl px-4 pb-16">
+    <main className="to-background mx-auto min-h-screen max-w-xl bg-gradient-to-b from-slate-50 px-4 pb-16 dark:from-slate-950">
       <AutoRefresh />
 
       <header className="flex items-center justify-between gap-3 py-5">
@@ -58,7 +58,12 @@ export default async function TableBillPage({ params }: PageProps) {
         </div>
       ) : (
         <div className="space-y-4">
-          <BillLines slug={parsed.data.slug} qrToken={parsed.data.table} bill={bill} editable={false} />
+          <BillLines
+            slug={parsed.data.slug}
+            qrToken={parsed.data.table}
+            bill={bill}
+            editable={false}
+          />
 
           {hasPayments ? (
             <div className="bg-card space-y-1 rounded-xl border p-4 text-sm">
@@ -74,7 +79,7 @@ export default async function TableBillPage({ params }: PageProps) {
           ) : null}
 
           {remainingClp > 0 ? (
-            <Button asChild size="lg" className="w-full">
+            <Button asChild size="lg" className="h-14 w-full rounded-2xl text-base shadow-md">
               <Link href={`${billHref}/pagar`}>
                 Pagar {hasPayments ? formatClp(remainingClp) : "la cuenta"}
               </Link>

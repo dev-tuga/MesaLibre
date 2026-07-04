@@ -53,9 +53,7 @@ export default async function WaiterOrderPage({ params }: PageProps) {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Mesa {context.table.number}
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight">Mesa {context.table.number}</h1>
             <p className="text-muted-foreground text-sm">{context.table.restaurantName}</p>
           </div>
         </div>

@@ -223,3 +223,23 @@ encode the bill route directly.
 
 **Consequences:** Admin must operate the ordering UI; guests need network access only for viewing
 and paying. `headCount` feeds the payment screen defaults (see ADR-013).
+
+---
+
+## ADR-013: Split modes, digital wallets (demo) and Google reviews
+
+**Status:** accepted
+
+**Context:** Chilean dine-in guests need equal splits aligned to table headcount, or
+by-consumption splits where each payer selects their items. Wallet buttons (Apple Pay / Google
+Pay) must feel native even in a sandbox deployment. Post-payment, restaurants benefit from Google
+Maps reviews.
+
+**Decision:** `Payment.splitMode` is `EQUAL` (existing ÷N math, defaulting to `Order.headCount`) or
+`BY_ITEMS` with `PaymentItemAllocation` rows tracking which units were paid. Mock provider accepts
+`APPLE_PAY` and `GOOGLE_PAY` methods with distinct refs. Optional `Restaurant.googlePlaceId` powers
+a post-payment Google review CTA.
+
+**Consequences:** Item-based splits require tracking paid quantities per line. Real wallet rails
+replace the mock provider without UI changes. Production Google review links need a verified
+Place ID per restaurant.

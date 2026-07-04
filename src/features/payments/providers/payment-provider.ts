@@ -11,6 +11,7 @@ export type ChargeRequest = {
   tipClp: number;
   /** Human-readable statement descriptor, e.g. "La Picada del Puerto — Mesa 3". */
   description: string;
+  method?: "CARD" | "APPLE_PAY" | "GOOGLE_PAY";
   metadata: {
     orderId: string;
     restaurantSlug: string;
