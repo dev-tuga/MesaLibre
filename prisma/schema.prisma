@@ -9,29 +9,43 @@ datasource db {
 }
 
 model Restaurant {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  name      String
-  logoUrl        String?
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  logoUrl       String?
   /// Google Maps Place ID for post-payment review deep links.
-  googlePlaceId  String?
-  createdAt      DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  googlePlaceId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  tables     Table[]
-  categories Category[]
-  admins     AdminUser[]
+  tables        Table[]
+  categories    Category[]
+  admins        AdminUser[]
+  shifts        Shift[]
+  tableServices TableService[]
+}
+
+enum StaffRole {
+  OWNER
+  MANAGER
+  WAITER
 }
 
 model AdminUser {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   name         String
   passwordHash String
+  role         StaffRole @default(WAITER)
+  isActive     Boolean   @default(true)
   restaurantId String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  shifts        Shift[]
+  tableServices TableService[]
+  ordersServed  Order[]       @relation("OrderServedBy")
+  orderItemsAdded OrderItem[] @relation("OrderItemAddedBy")
 }
 
 model Table {
@@ -42,8 +56,9 @@ model Table {
   qrToken      String @unique @default(cuid())
   restaurantId String
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  orders     Order[]
+  restaurant    Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  tableServices TableService[]
 
   @@unique([restaurantId, number])
 }
@@ -81,33 +96,41 @@ enum OrderStatus {
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  status    OrderStatus @default(OPEN)
-  tableId   String
+  id              String      @id @default(cuid())
+  status          OrderStatus @default(OPEN)
+  tableId         String
   /// Number of diners at the table, set by staff when seating. Drives
   /// default equal-split options on the guest payment screen.
-  headCount Int         @default(1)
-  createdAt DateTime    @default(now())
-  closedAt  DateTime?
+  headCount       Int         @default(1)
+  /// Primary waiter attending this order.
+  servedByStaffId String?
+  shiftId         String?
+  createdAt       DateTime    @default(now())
+  closedAt        DateTime?
 
-  table    Table       @relation(fields: [tableId], references: [id], onDelete: Cascade)
-  items    OrderItem[]
-  payments Payment[]
-  review   Review?
+  table         Table          @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  servedBy      AdminUser?     @relation("OrderServedBy", fields: [servedByStaffId], references: [id], onDelete: SetNull)
+  shift         Shift?         @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  items         OrderItem[]
+  payments      Payment[]
+  review        Review?
+  tableServices TableService[]
 }
 
 model OrderItem {
-  id           String   @id @default(cuid())
-  orderId      String
-  productId    String
-  quantity     Int
+  id             String   @id @default(cuid())
+  orderId        String
+  productId      String
+  quantity       Int
   /// Snapshot of the product price at the time it was added, so later
   /// menu edits never change an already-open bill.
-  unitPriceClp Int
-  createdAt    DateTime @default(now())
+  unitPriceClp   Int
+  addedByStaffId String?
+  createdAt      DateTime @default(now())
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  addedBy     AdminUser? @relation("OrderItemAddedBy", fields: [addedByStaffId], references: [id], onDelete: SetNull)
   allocations PaymentItemAllocation[]
 }
 
@@ -123,21 +146,21 @@ enum PaymentSplitMode {
 }
 
 model Payment {
-  id          String            @id @default(cuid())
+  id          String           @id @default(cuid())
   orderId     String
   /// Share of the bill covered by this payment, tip excluded.
   amountClp   Int
-  tipClp      Int               @default(0)
-  method      PaymentMethod     @default(CARD)
-  splitMode   PaymentSplitMode  @default(EQUAL)
+  tipClp      Int              @default(0)
+  method      PaymentMethod    @default(CARD)
+  splitMode   PaymentSplitMode @default(EQUAL)
   /// Number of equal parts the bill was split into when this payment
   /// was made (1 = the payer covered the whole remaining bill).
-  splitCount  Int               @default(1)
+  splitCount  Int              @default(1)
   /// Reference returned by the payment provider.
   providerRef String?
-  createdAt   DateTime          @default(now())
+  createdAt   DateTime         @default(now())
 
-  order           Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order           Order                   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   itemAllocations PaymentItemAllocation[]
 }
 
@@ -162,4 +185,46 @@ model Review {
   createdAt DateTime @default(now())
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+enum TableClaimMode {
+  ASSIGNED
+  SELF_CLAIMED
+}
+
+model Shift {
+  id           String    @id @default(cuid())
+  restaurantId String
+  staffUserId  String
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+
+  restaurant    Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  staff         AdminUser      @relation(fields: [staffUserId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  tableServices TableService[]
+
+  @@index([restaurantId, staffUserId, endedAt])
+}
+
+model TableService {
+  id           String         @id @default(cuid())
+  restaurantId String
+  tableId      String
+  staffUserId  String
+  orderId      String?
+  shiftId      String?
+  claimMode    TableClaimMode @default(SELF_CLAIMED)
+  claimedAt    DateTime       @default(now())
+  releasedAt   DateTime?
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  table      Table      @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  staff      AdminUser  @relation(fields: [staffUserId], references: [id], onDelete: Cascade)
+  order      Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  shift      Shift?     @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+
+  @@index([tableId, releasedAt])
+  @@index([staffUserId, releasedAt])
+  @@index([restaurantId, releasedAt])
 }

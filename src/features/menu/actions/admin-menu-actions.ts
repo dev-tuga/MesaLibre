@@ -10,10 +10,20 @@ import {
   upsertProductSchema,
 } from "@/features/menu/schemas/admin";
 import type { ActionResult } from "@/features/orders/schemas/order";
-import { getAdminSession } from "@/lib/auth";
+import { getStaffSession } from "@/features/staff/session";
 import { getPrisma } from "@/lib/prisma";
+import { canManageMenu } from "@/lib/staff-auth";
 
 const MENU_PATH = "/dashboard/carta";
+
+async function requireMenuManager() {
+  const session = await getStaffSession();
+  if (!session) return { ok: false as const, error: "Sesión expirada." };
+  if (!canManageMenu(session.user.role)) {
+    return { ok: false as const, error: "No tienes permiso para editar la carta." };
+  }
+  return { ok: true as const, session };
+}
 
 /**
  * Every admin action re-checks the session and scopes queries to the
@@ -21,8 +31,9 @@ const MENU_PATH = "/dashboard/carta";
  */
 
 export async function upsertCategory(rawInput: unknown): Promise<ActionResult> {
-  const session = await getAdminSession();
-  if (!session) return { ok: false, error: "Sesión expirada." };
+  const auth = await requireMenuManager();
+  if (!auth.ok) return auth;
+  const session = auth.session;
 
   const parsed = upsertCategorySchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -58,8 +69,9 @@ export async function upsertCategory(rawInput: unknown): Promise<ActionResult> {
 }
 
 export async function deleteCategory(rawInput: unknown): Promise<ActionResult> {
-  const session = await getAdminSession();
-  if (!session) return { ok: false, error: "Sesión expirada." };
+  const auth = await requireMenuManager();
+  if (!auth.ok) return auth;
+  const session = auth.session;
 
   const parsed = deleteCategorySchema.safeParse(rawInput);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -86,8 +98,9 @@ export async function deleteCategory(rawInput: unknown): Promise<ActionResult> {
 }
 
 export async function upsertProduct(rawInput: unknown): Promise<ActionResult> {
-  const session = await getAdminSession();
-  if (!session) return { ok: false, error: "Sesión expirada." };
+  const auth = await requireMenuManager();
+  if (!auth.ok) return auth;
+  const session = auth.session;
 
   const parsed = upsertProductSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -132,8 +145,9 @@ export async function upsertProduct(rawInput: unknown): Promise<ActionResult> {
 }
 
 export async function toggleProductAvailability(rawInput: unknown): Promise<ActionResult> {
-  const session = await getAdminSession();
-  if (!session) return { ok: false, error: "Sesión expirada." };
+  const auth = await requireMenuManager();
+  if (!auth.ok) return auth;
+  const session = auth.session;
 
   const parsed = toggleProductSchema.safeParse(rawInput);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -150,8 +164,9 @@ export async function toggleProductAvailability(rawInput: unknown): Promise<Acti
 }
 
 export async function deleteProduct(rawInput: unknown): Promise<ActionResult> {
-  const session = await getAdminSession();
-  if (!session) return { ok: false, error: "Sesión expirada." };
+  const auth = await requireMenuManager();
+  if (!auth.ok) return auth;
+  const session = auth.session;
 
   const parsed = deleteProductSchema.safeParse(rawInput);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };

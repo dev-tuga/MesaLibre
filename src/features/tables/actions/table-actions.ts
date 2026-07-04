@@ -6,8 +6,9 @@ import { revalidatePath } from "next/cache";
 
 import type { ActionResult } from "@/features/orders/schemas/order";
 import { regenerateQrTokenSchema } from "@/features/tables/schemas/table";
-import { getAdminSession } from "@/lib/auth";
+import { getStaffSession } from "@/features/staff/session";
 import { getPrisma } from "@/lib/prisma";
+import { canViewAllTables } from "@/lib/staff-auth";
 
 /** 12 random bytes -> 16 url-safe chars; plenty of entropy for a table token. */
 function newQrToken(): string {
@@ -20,8 +21,11 @@ function newQrToken(): string {
  * sheet goes missing.
  */
 export async function regenerateQrToken(rawInput: unknown): Promise<ActionResult> {
-  const session = await getAdminSession();
+  const session = await getStaffSession();
   if (!session) return { ok: false, error: "Sesión expirada." };
+  if (!canViewAllTables(session.user.role)) {
+    return { ok: false, error: "No tienes permiso para regenerar QRs." };
+  }
 
   const parsed = regenerateQrTokenSchema.safeParse(rawInput);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };

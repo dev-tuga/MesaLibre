@@ -7,7 +7,8 @@ import { CategoryDialog } from "@/features/menu/components/admin/category-dialog
 import { DeleteButton } from "@/features/menu/components/admin/delete-button";
 import { ProductDialog } from "@/features/menu/components/admin/product-dialog";
 import { getMenuForAdmin } from "@/features/menu/queries";
-import { getAdminSession } from "@/lib/auth";
+import { getStaffSession } from "@/features/staff/session";
+import { canManageMenu } from "@/lib/staff-auth";
 import { formatClp } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -15,8 +16,9 @@ export const metadata: Metadata = {
 };
 
 export default async function MenuAdminPage() {
-  const session = await getAdminSession();
+  const session = await getStaffSession();
   if (!session) redirect("/login");
+  if (!canManageMenu(session.user.role)) redirect("/dashboard");
   const categories = await getMenuForAdmin(session.user.restaurantId);
   const categoryOptions = categories.map(({ id, name }) => ({ id, name }));
 

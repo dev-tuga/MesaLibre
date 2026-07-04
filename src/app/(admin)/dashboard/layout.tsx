@@ -1,23 +1,53 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { StaffRole } from "@prisma/client";
 import { LogOut, UtensilsCrossed } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { getAdminSession } from "@/lib/auth";
+import { getStaffSession } from "@/features/staff/session";
+import { staffRoleLabel } from "@/features/staff/labels";
+import {
+  canManageMenu,
+  canManageStaff,
+  canViewAllTables,
+  canViewPerformance,
+} from "@/lib/staff-auth";
 import { logout } from "../login/actions";
 
-const navItems = [
-  { href: "/dashboard", label: "Resumen" },
-  { href: "/dashboard/carta", label: "Carta" },
-  { href: "/dashboard/mesas", label: "Mesas abiertas" },
-  { href: "/dashboard/pagos", label: "Pagos" },
-];
+function buildNavItems(role: StaffRole) {
+  const items = [{ href: "/dashboard", label: "Resumen" }];
+
+  if (canManageMenu(role)) {
+    items.push({ href: "/dashboard/carta", label: "Carta" });
+  }
+
+  items.push({
+    href: "/dashboard/mesas",
+    label: canViewAllTables(role) ? "Mesas abiertas" : "Mis mesas",
+  });
+
+  if (canViewAllTables(role)) {
+    items.push({ href: "/dashboard/pagos", label: "Pagos" });
+  }
+
+  if (canManageStaff(role)) {
+    items.push({ href: "/dashboard/equipo", label: "Equipo" });
+  }
+
+  if (canViewPerformance(role)) {
+    items.push({ href: "/dashboard/desempeno", label: "Desempeño" });
+  }
+
+  return items;
+}
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await getAdminSession();
+  const session = await getStaffSession();
   if (!session) {
     redirect("/login");
   }
+
+  const navItems = buildNavItems(session.user.role);
 
   return (
     <div className="bg-muted/40 min-h-screen print:bg-white">
@@ -29,7 +59,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
           <div className="flex items-center gap-3">
             <span className="text-muted-foreground hidden text-sm sm:inline">
-              {session.user.name}
+              {session.user.name} · {staffRoleLabel(session.user.role)}
             </span>
             <form action={logout}>
               <Button type="submit" variant="ghost" size="sm">

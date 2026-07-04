@@ -243,3 +243,24 @@ a post-payment Google review CTA.
 **Consequences:** Item-based splits require tracking paid quantities per line. Real wallet rails
 replace the mock provider without UI changes. Production Google review links need a verified
 Place ID per restaurant.
+
+---
+
+## ADR-014: Staff roles, table assignment, and shift tracking
+
+**Status:** accepted
+
+**Context:** Restaurants have multiple waiters who need to claim or be assigned tables, work in
+shifts, and be measured on sales and tips. Owners and managers need visibility; waiters need a
+focused mobile/tablet flow without admin settings.
+
+**Decision:** Extend `AdminUser` with `StaffRole` (`OWNER`, `MANAGER`, `WAITER`). Introduce
+`Shift` (clock in/out) and `TableService` (active table claim with `ASSIGNED` or `SELF_CLAIMED`
+mode). `Order.servedByStaffId` and `OrderItem.addedByStaffId` attribute service. Waiters must
+start a shift and claim a table before loading orders; managers/owners see all tables and can
+assign or reassign. Performance aggregates are exposed only to `OWNER` and `MANAGER` at
+`/dashboard/desempeno`.
+
+**Consequences:** JWT sessions now carry `role`. Re-login is required after role changes. Table
+service rows are released automatically when an order is fully paid. Future InsForge/SaaS billing
+can scope AI ops agents per `restaurantId` using the same tenant boundary.
