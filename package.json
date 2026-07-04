@@ -6,8 +6,9 @@
   "packageManager": "pnpm@10.33.3",
   "scripts": {
     "build": "next build",
-    "dev": "next dev --turbopack",
-    "dev:lan": "next dev --turbopack -H 0.0.0.0",
+    "predev": "prisma generate",
+    "dev": "env -u DATABASE_URL next dev --turbopack",
+    "dev:lan": "env -u DATABASE_URL next dev --turbopack -H 0.0.0.0",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
