@@ -82,6 +82,9 @@ model Order {
   id        String      @id @default(cuid())
   status    OrderStatus @default(OPEN)
   tableId   String
+  /// Number of diners at the table, set by staff when seating. Drives
+  /// default equal-split options on the guest payment screen.
+  headCount Int         @default(1)
   createdAt DateTime    @default(now())
   closedAt  DateTime?
 

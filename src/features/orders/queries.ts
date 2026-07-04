@@ -29,7 +29,7 @@ export async function getOpenTables(restaurantId: string) {
     where: { status: "OPEN", table: { restaurantId } },
     orderBy: { createdAt: "asc" },
     include: {
-      table: { select: { number: true } },
+      table: { select: { number: true, id: true } },
       items: {
         orderBy: { createdAt: "asc" },
         include: { product: { select: { name: true } } },
@@ -51,6 +51,7 @@ export async function getOpenTables(restaurantId: string) {
 
     return {
       orderId: order.id,
+      tableId: order.table.id,
       tableNumber: order.table.number,
       openedAt: order.createdAt,
       itemCount: bill.itemCount,
