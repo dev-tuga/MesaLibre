@@ -6,6 +6,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ProductThumbnail } from "@/components/product-thumbnail";
 import { waiterAddItemToOrder } from "@/features/orders/actions/waiter-order-actions";
 import type { AdminMenuCategory } from "@/features/menu/queries";
 
@@ -50,11 +51,19 @@ export function WaiterMenuPicker({ tableId, categories, disabled }: WaiterMenuPi
                     key={product.id}
                     className="bg-card flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{product.name}</p>
-                      <p className="text-muted-foreground text-sm tabular-nums">
-                        ${product.priceClp.toLocaleString("es-CL")}
-                      </p>
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <ProductThumbnail
+                        imageUrl={product.imageUrl}
+                        categoryName={category.name}
+                        alt={product.name}
+                        className="size-11 sm:size-12"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{product.name}</p>
+                        <p className="text-muted-foreground text-sm tabular-nums">
+                          ${product.priceClp.toLocaleString("es-CL")}
+                        </p>
+                      </div>
                     </div>
                     <Button
                       type="button"

@@ -1,5 +1,6 @@
 "use server";
 
+import { releaseTableForOrder } from "@/features/staff/actions/table-service-actions";
 import { getTableByQrToken } from "@/features/menu/queries";
 import { getOpenOrder, toBill } from "@/features/orders/queries";
 import { getPaymentProvider } from "@/features/payments/providers";
@@ -159,6 +160,10 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
       ok: false,
       error: "La cuenta cambió mientras pagabas. Revisa el saldo e intenta de nuevo.",
     };
+  }
+
+  if (orderClosed) {
+    await releaseTableForOrder(order.id);
   }
 
   return {

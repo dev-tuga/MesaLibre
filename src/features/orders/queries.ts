@@ -34,13 +34,39 @@ export async function getOpenOrder(tableId: string) {
 export type OpenOrder = NonNullable<Awaited<ReturnType<typeof getOpenOrder>>>;
 
 /** Open tables for the admin dashboard: every OPEN order with its bill status. */
-export async function getOpenTables(restaurantId: string) {
+export async function getOpenTables(restaurantId: string, options?: { staffUserId?: string }) {
   const prisma = getPrisma();
   const orders = await prisma.order.findMany({
-    where: { status: "OPEN", table: { restaurantId } },
+    where: {
+      status: "OPEN",
+      table: {
+        restaurantId,
+        ...(options?.staffUserId
+          ? {
+              tableServices: {
+                some: {
+                  staffUserId: options.staffUserId,
+                  releasedAt: null,
+                },
+              },
+            }
+          : {}),
+      },
+    },
     orderBy: { createdAt: "asc" },
     include: {
-      table: { select: { number: true, id: true } },
+      table: {
+        select: {
+          number: true,
+          id: true,
+          tableServices: {
+            where: { releasedAt: null },
+            take: 1,
+            include: { staff: { select: { id: true, name: true } } },
+          },
+        },
+      },
+      servedBy: { select: { id: true, name: true } },
       items: {
         orderBy: { createdAt: "asc" },
         include: { product: { select: { name: true } } },
@@ -59,6 +85,7 @@ export async function getOpenTables(restaurantId: string) {
       })),
     );
     const paidClp = order.payments.reduce((sum, p) => sum + p.amountClp, 0);
+    const assignment = order.table.tableServices[0];
 
     return {
       orderId: order.id,
@@ -69,6 +96,8 @@ export async function getOpenTables(restaurantId: string) {
       totalClp: bill.totalClp,
       paidClp,
       remainingClp: Math.max(0, bill.totalClp - paidClp),
+      waiterName: assignment?.staff.name ?? order.servedBy?.name ?? null,
+      waiterId: assignment?.staff.id ?? order.servedBy?.id ?? null,
     };
   });
 }

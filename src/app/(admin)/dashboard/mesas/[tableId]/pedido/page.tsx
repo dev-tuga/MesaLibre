@@ -11,9 +11,15 @@ import { HeadCountSelector } from "@/features/orders/components/head-count-selec
 import { WaiterBillLines } from "@/features/orders/components/waiter-bill-lines";
 import { WaiterMenuPicker } from "@/features/orders/components/waiter-menu-picker";
 import { getWaiterOrderContext } from "@/features/orders/queries/waiter-order";
-import { getAdminSession } from "@/lib/auth";
-import { env } from "@/lib/env";
+import { ClaimTableButton } from "@/features/staff/components/claim-table-button";
+import { ReleaseTableButton } from "@/features/staff/components/release-table-button";
+import { assertStaffTableAccess } from "@/features/staff/actions/table-service-actions";
+import { getActiveTableService } from "@/features/staff/queries/table-service";
+import { getStaffSession } from "@/features/staff/session";
+import { staffRoleLabel } from "@/features/staff/labels";
+import { getPublicBaseUrl } from "@/lib/app-url";
 import { formatClp } from "@/lib/format";
+import { canViewAllTables } from "@/lib/staff-auth";
 import { buildTableUrl } from "@/lib/urls";
 
 type PageProps = {
@@ -25,26 +31,55 @@ export const metadata: Metadata = {
 };
 
 export default async function WaiterOrderPage({ params }: PageProps) {
-  const session = await getAdminSession();
+  const session = await getStaffSession();
   if (!session) redirect("/login");
 
   const { tableId } = await params;
-  const [context, menu] = await Promise.all([
+  const isManager = canViewAllTables(session.user.role);
+
+  const [context, menu, assignment, access] = await Promise.all([
     getWaiterOrderContext(tableId, session.user.restaurantId),
     getMenuForAdmin(session.user.restaurantId),
+    getActiveTableService(tableId),
+    isManager ? Promise.resolve({ ok: true as const }) : assertStaffTableAccess(tableId),
   ]);
+
   if (!context) notFound();
 
+  const isMine = assignment?.staff.id === session.user.id;
+  const needsClaim = !isManager && !assignment;
+  const blocked = !isManager && assignment && !isMine;
+
+  if (blocked) {
+    return (
+      <div className="space-y-4">
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/dashboard/mesas">
+            <ArrowLeft />
+            Volver a mesas
+          </Link>
+        </Button>
+        <div className="bg-card rounded-xl border p-6 text-center">
+          <p className="font-medium">Mesa {context.table.number} atendida por otro garzón</p>
+          <p className="text-muted-foreground mt-2 text-sm">
+            {assignment?.staff.name} está a cargo de esta mesa.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const guestUrl = buildTableUrl(
-    env.NEXT_PUBLIC_APP_BASE_URL,
+    await getPublicBaseUrl(),
     context.table.restaurantSlug,
     context.table.qrToken,
   );
   const headCount = context.order?.headCount ?? 1;
   const frozen = context.order?.hasPayments ?? false;
+  const canEdit = isManager || (access.ok && !needsClaim);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start lg:gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="icon" aria-label="Volver a mesas">
@@ -57,10 +92,30 @@ export default async function WaiterOrderPage({ params }: PageProps) {
             <p className="text-muted-foreground text-sm">{context.table.restaurantName}</p>
           </div>
         </div>
-        <Badge variant="secondary">Garzón</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{staffRoleLabel(session.user.role)}</Badge>
+          {assignment ? (
+            <Badge variant="outline">{assignment.staff.name}</Badge>
+          ) : (
+            <Badge variant="outline">Sin asignar</Badge>
+          )}
+        </div>
       </div>
 
-      <HeadCountSelector tableId={context.table.id} value={headCount} disabled={frozen} />
+      {needsClaim ? (
+        <div className="bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
+          <p className="text-sm">Debes tomar esta mesa antes de cargar el pedido.</p>
+          <ClaimTableButton tableId={tableId} label="Tomar esta mesa" />
+        </div>
+      ) : null}
+
+      {isMine || isManager ? assignment ? <ReleaseTableButton tableId={tableId} /> : null : null}
+
+      <HeadCountSelector
+        tableId={context.table.id}
+        value={headCount}
+        disabled={frozen || !canEdit}
+      />
 
       <Separator />
 
@@ -72,7 +127,7 @@ export default async function WaiterOrderPage({ params }: PageProps) {
         <WaiterBillLines
           tableId={context.table.id}
           items={context.order?.items ?? []}
-          editable={!frozen}
+          editable={!frozen && canEdit}
         />
         {context.paidClp > 0 ? (
           <p className="text-muted-foreground text-sm">
@@ -83,7 +138,11 @@ export default async function WaiterOrderPage({ params }: PageProps) {
 
       <Separator />
 
-      <WaiterMenuPicker tableId={context.table.id} categories={menu} disabled={frozen} />
+      <WaiterMenuPicker
+        tableId={context.table.id}
+        categories={menu}
+        disabled={frozen || !canEdit}
+      />
 
       <div className="bg-muted/40 rounded-xl border p-4 text-sm">
         <p className="font-medium">Vista del comensal (QR)</p>

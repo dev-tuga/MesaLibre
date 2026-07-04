@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
+import { ResponsiveTable } from "@/components/responsive-table";
 import {
   Table,
   TableBody,
@@ -32,7 +33,7 @@ export default async function PaymentsHistoryPage() {
           Todavía no se registran pagos.
         </p>
       ) : (
-        <div className="bg-card rounded-xl border">
+        <ResponsiveTable>
           <Table>
             <TableHeader>
               <TableRow>
@@ -79,7 +80,7 @@ export default async function PaymentsHistoryPage() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </ResponsiveTable>
       )}
     </div>
   );

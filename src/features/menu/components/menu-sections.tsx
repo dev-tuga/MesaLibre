@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { ProductThumbnail } from "@/components/product-thumbnail";
 import type { MenuCategory } from "@/features/menu/queries";
 import { formatClp } from "@/lib/format";
 
@@ -23,14 +24,19 @@ export function MenuSections({ categories, productAction }: MenuSectionsProps) {
         >
           <h2
             id={`categoria-${category.id}-titulo`}
-            className="mb-3 text-lg font-semibold tracking-tight"
+            className="mb-3 text-lg font-semibold tracking-tight sm:text-xl"
           >
             {category.name}
           </h2>
           <ul className="bg-card divide-y rounded-xl border">
             {category.products.map((product) => (
-              <li key={product.id} className="flex items-start justify-between gap-4 p-4">
-                <div>
+              <li key={product.id} className="flex items-start gap-3 p-3 sm:gap-4 sm:p-4">
+                <ProductThumbnail
+                  imageUrl={product.imageUrl}
+                  categoryName={category.name}
+                  alt={product.name}
+                />
+                <div className="min-w-0 flex-1">
                   <p className="font-medium">{product.name}</p>
                   {product.description ? (
                     <p className="text-muted-foreground mt-0.5 text-sm">{product.description}</p>

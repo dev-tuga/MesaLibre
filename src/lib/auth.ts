@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import type { StaffRole } from "@prisma/client";
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
@@ -11,11 +12,13 @@ declare module "next-auth" {
     user: {
       id: string;
       restaurantId: string;
+      role: StaffRole;
     } & DefaultSession["user"];
   }
 
   interface User {
     restaurantId: string;
+    role: StaffRole;
   }
 }
 
@@ -26,10 +29,6 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: env.AUTH_SECRET,
-  // Trust the incoming Host header: in development this lets the app be
-  // reached by LAN IP (mobile testing) and in production the host is
-  // controlled by our own proxy. Auth URLs are derived per-request, so no
-  // AUTH_URL needs to be configured.
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
@@ -49,7 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const admin = await prisma.adminUser.findUnique({
           where: { email: parsed.data.email.toLowerCase() },
         });
-        if (!admin) {
+        if (!admin || !admin.isActive) {
           return null;
         }
 
@@ -63,6 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: admin.email,
           name: admin.name,
           restaurantId: admin.restaurantId,
+          role: admin.role,
         };
       },
     }),
@@ -72,12 +72,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.sub = user.id;
         token.restaurantId = user.restaurantId;
+        token.role = user.role;
       }
       return token;
     },
     session({ session, token }) {
       session.user.id = token.sub as string;
       session.user.restaurantId = token.restaurantId as string;
+      session.user.role = token.role as StaffRole;
       return session;
     },
   },

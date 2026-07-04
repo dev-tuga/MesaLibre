@@ -1,9 +1,14 @@
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { Pool } from "pg";
 
 import { buildTableUrl } from "../src/lib/urls";
+import { getProductImageUrl } from "../src/lib/product-images";
 
-const prisma = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_BASE_URL ?? "http://localhost:3000";
 
@@ -16,7 +21,7 @@ const RESTAURANT_SLUG = "la-picada-del-puerto";
 
 const menu: {
   category: string;
-  products: { name: string; description: string; priceClp: number }[];
+  products: { name: string; description: string; priceClp: number; imageUrl?: string }[];
 }[] = [
   {
     category: "Para picar",
@@ -127,8 +132,32 @@ const menu: {
 
 const TABLE_COUNT = 8;
 
-const ADMIN_EMAIL = "admin@lapicada.cl";
-const ADMIN_PASSWORD = "picada-demo-2026";
+const STAFF = [
+  {
+    email: "admin@lapicada.cl",
+    name: "Carla Fuentes",
+    password: "picada-demo-2026",
+    role: "OWNER" as const,
+  },
+  {
+    email: "manager@lapicada.cl",
+    name: "Diego Morales",
+    password: "picada-demo-2026",
+    role: "MANAGER" as const,
+  },
+  {
+    email: "garzon1@lapicada.cl",
+    name: "Valentina Rojas",
+    password: "picada-demo-2026",
+    role: "WAITER" as const,
+  },
+  {
+    email: "garzon2@lapicada.cl",
+    name: "Tomás Aguirre",
+    password: "picada-demo-2026",
+    role: "WAITER" as const,
+  },
+];
 
 async function main() {
   await prisma.restaurant.deleteMany({ where: { slug: RESTAURANT_SLUG } });
@@ -143,7 +172,10 @@ async function main() {
           position: categoryIndex,
           products: {
             create: category.products.map((product, productIndex) => ({
-              ...product,
+              name: product.name,
+              description: product.description,
+              priceClp: product.priceClp,
+              imageUrl: product.imageUrl ?? getProductImageUrl(null, category.category),
               position: productIndex,
             })),
           },
@@ -152,22 +184,24 @@ async function main() {
       tables: {
         create: Array.from({ length: TABLE_COUNT }, (_, i) => ({
           number: i + 1,
-          // Stable, non-guessable-enough for a demo. Real deployments
-          // regenerate tokens from the admin panel.
           qrToken: `demo-mesa-${i + 1}-7f3k`,
         })),
       },
       admins: {
-        create: {
-          email: ADMIN_EMAIL,
-          name: "Carla Fuentes",
-          passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 10),
-        },
+        create: await Promise.all(
+          STAFF.map(async (member) => ({
+            email: member.email,
+            name: member.name,
+            role: member.role,
+            passwordHash: await bcrypt.hash(member.password, 10),
+          })),
+        ),
       },
     },
     include: {
       tables: { orderBy: { number: "asc" } },
       categories: { include: { products: true } },
+      admins: true,
     },
   });
 
@@ -181,7 +215,10 @@ async function main() {
       `    Mesa ${table.number}: ${buildTableUrl(BASE_URL, restaurant.slug, table.qrToken)}`,
     );
   }
-  console.log(`  Admin login: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
+  console.log("  Staff logins (password for all: picada-demo-2026):");
+  for (const member of STAFF) {
+    console.log(`    ${member.role.padEnd(7)} ${member.email} — ${member.name}`);
+  }
 }
 
 main()
@@ -189,4 +226,7 @@ main()
     console.error(error);
     process.exitCode = 1;
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+    await pool.end();
+  });

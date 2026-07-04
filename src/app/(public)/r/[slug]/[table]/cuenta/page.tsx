@@ -36,12 +36,12 @@ export default async function TableBillPage({ params }: PageProps) {
   const hasPayments = paidClp > 0;
 
   return (
-    <main className="to-background mx-auto min-h-screen max-w-xl bg-gradient-to-b from-slate-50 px-4 pb-16 dark:from-slate-950">
+    <main className="to-background mx-auto min-h-screen max-w-xl bg-gradient-to-b from-slate-50 px-4 pb-16 sm:px-6 dark:from-slate-950">
       <AutoRefresh />
 
-      <header className="flex items-center justify-between gap-3 py-5">
+      <header className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Tu cuenta</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Tu cuenta</h1>
           <p className="text-muted-foreground text-sm">{table.restaurant.name}</p>
         </div>
         <Badge variant="secondary" className="text-sm">

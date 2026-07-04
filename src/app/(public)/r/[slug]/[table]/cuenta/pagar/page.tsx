@@ -47,8 +47,8 @@ export default async function PayBillPage({ params }: PageProps) {
   const lines = computeBillLineAvailability(order.items, allocations);
 
   return (
-    <main className="to-background mx-auto min-h-screen max-w-xl bg-gradient-to-b from-slate-50 px-4 pb-16 dark:from-slate-950">
-      <header className="flex items-center justify-between gap-3 py-5">
+    <main className="to-background mx-auto min-h-screen max-w-xl bg-gradient-to-b from-slate-50 px-4 pb-16 sm:px-6 dark:from-slate-950">
+      <header className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="icon" aria-label="Volver a la cuenta">
             <Link href={billHref}>
@@ -56,7 +56,7 @@ export default async function PayBillPage({ params }: PageProps) {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Pagar cuenta</h1>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Pagar cuenta</h1>
             <p className="text-muted-foreground text-sm">{table.restaurant.name}</p>
           </div>
         </div>

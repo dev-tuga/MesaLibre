@@ -16,7 +16,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="bg-muted/40 flex min-h-screen items-center justify-center px-4">
+    <main className="bg-muted/40 flex min-h-screen items-center justify-center px-4 py-8 sm:px-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-xl">Panel del restaurante</CardTitle>

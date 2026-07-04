@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
+import { ProductThumbnail } from "@/components/product-thumbnail";
 import { AvailabilityToggle } from "@/features/menu/components/admin/availability-toggle";
 import { CategoryDialog } from "@/features/menu/components/admin/category-dialog";
 import { DeleteButton } from "@/features/menu/components/admin/delete-button";
 import { ProductDialog } from "@/features/menu/components/admin/product-dialog";
 import { getMenuForAdmin } from "@/features/menu/queries";
-import { getAdminSession } from "@/lib/auth";
+import { getStaffSession } from "@/features/staff/session";
+import { canManageMenu } from "@/lib/staff-auth";
 import { formatClp } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -15,15 +17,16 @@ export const metadata: Metadata = {
 };
 
 export default async function MenuAdminPage() {
-  const session = await getAdminSession();
+  const session = await getStaffSession();
   if (!session) redirect("/login");
+  if (!canManageMenu(session.user.role)) redirect("/dashboard");
   const categories = await getMenuForAdmin(session.user.restaurantId);
   const categoryOptions = categories.map(({ id, name }) => ({ id, name }));
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">Carta</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Carta</h1>
         <CategoryDialog />
       </div>
 
@@ -35,7 +38,7 @@ export default async function MenuAdminPage() {
         <div className="space-y-8">
           {categories.map((category) => (
             <section key={category.id} aria-labelledby={`admin-cat-${category.id}`}>
-              <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-1">
                   <h2 id={`admin-cat-${category.id}`} className="text-lg font-semibold">
                     {category.name}
@@ -53,33 +56,46 @@ export default async function MenuAdminPage() {
               ) : (
                 <ul className="bg-card divide-y rounded-xl border">
                   {category.products.map((product) => (
-                    <li key={product.id} className="flex items-center gap-3 p-4">
-                      <AvailabilityToggle
-                        productId={product.id}
-                        productName={product.name}
-                        available={product.available}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="flex items-center gap-2 font-medium">
-                          <span className="truncate">{product.name}</span>
-                          {!product.available ? (
-                            <Badge variant="outline" className="shrink-0">
-                              No disponible
-                            </Badge>
-                          ) : null}
-                        </p>
-                        {product.description ? (
-                          <p className="text-muted-foreground truncate text-sm">
-                            {product.description}
+                    <li
+                      key={product.id}
+                      className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4"
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <ProductThumbnail
+                          imageUrl={product.imageUrl}
+                          categoryName={category.name}
+                          alt={product.name}
+                          className="size-12 sm:size-14"
+                        />
+                        <AvailabilityToggle
+                          productId={product.id}
+                          productName={product.name}
+                          available={product.available}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="flex flex-wrap items-center gap-2 font-medium">
+                            <span className="truncate">{product.name}</span>
+                            {!product.available ? (
+                              <Badge variant="outline" className="shrink-0">
+                                No disponible
+                              </Badge>
+                            ) : null}
                           </p>
-                        ) : null}
+                          {product.description ? (
+                            <p className="text-muted-foreground line-clamp-2 text-sm">
+                              {product.description}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
-                      <span className="shrink-0 font-semibold tabular-nums">
-                        {formatClp(product.priceClp)}
-                      </span>
-                      <div className="flex shrink-0 items-center">
-                        <ProductDialog categories={categoryOptions} product={product} />
-                        <DeleteButton kind="product" id={product.id} name={product.name} />
+                      <div className="flex items-center justify-between gap-2 sm:justify-end">
+                        <span className="shrink-0 font-semibold tabular-nums">
+                          {formatClp(product.priceClp)}
+                        </span>
+                        <div className="flex shrink-0 items-center">
+                          <ProductDialog categories={categoryOptions} product={product} />
+                          <DeleteButton kind="product" id={product.id} name={product.name} />
+                        </div>
                       </div>
                     </li>
                   ))}
