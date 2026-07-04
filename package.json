@@ -7,8 +7,8 @@
   "scripts": {
     "build": "next build",
     "predev": "prisma generate",
-    "dev": "env -u DATABASE_URL next dev --turbopack",
-    "dev:lan": "env -u DATABASE_URL next dev --turbopack -H 0.0.0.0",
+    "dev": "env -u DATABASE_URL next dev",
+    "dev:lan": "env -u DATABASE_URL next dev -H 0.0.0.0",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
