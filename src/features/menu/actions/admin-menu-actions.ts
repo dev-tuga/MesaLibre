@@ -11,7 +11,7 @@ import {
 } from "@/features/menu/schemas/admin";
 import type { ActionResult } from "@/features/orders/schemas/order";
 import { getAdminSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 const MENU_PATH = "/dashboard/carta";
 
@@ -30,6 +30,7 @@ export async function upsertCategory(rawInput: unknown): Promise<ActionResult> {
   }
   const { id, name } = parsed.data;
   const restaurantId = session.user.restaurantId;
+  const prisma = getPrisma();
 
   try {
     if (id) {
@@ -63,6 +64,7 @@ export async function deleteCategory(rawInput: unknown): Promise<ActionResult> {
   const parsed = deleteCategorySchema.safeParse(rawInput);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
 
+  const prisma = getPrisma();
   const category = await prisma.category.findFirst({
     where: { id: parsed.data.id, restaurantId: session.user.restaurantId },
     include: { products: { select: { _count: { select: { orderItems: true } } } } },
@@ -93,6 +95,7 @@ export async function upsertProduct(rawInput: unknown): Promise<ActionResult> {
   }
   const { id, categoryId, name, description, priceClp, available } = parsed.data;
   const restaurantId = session.user.restaurantId;
+  const prisma = getPrisma();
 
   const category = await prisma.category.findFirst({
     where: { id: categoryId, restaurantId },
@@ -135,6 +138,7 @@ export async function toggleProductAvailability(rawInput: unknown): Promise<Acti
   const parsed = toggleProductSchema.safeParse(rawInput);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
 
+  const prisma = getPrisma();
   const { count } = await prisma.product.updateMany({
     where: { id: parsed.data.id, category: { restaurantId: session.user.restaurantId } },
     data: { available: parsed.data.available },
@@ -152,6 +156,7 @@ export async function deleteProduct(rawInput: unknown): Promise<ActionResult> {
   const parsed = deleteProductSchema.safeParse(rawInput);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
 
+  const prisma = getPrisma();
   const product = await prisma.product.findFirst({
     where: { id: parsed.data.id, category: { restaurantId: session.user.restaurantId } },
     include: { _count: { select: { orderItems: true } } },

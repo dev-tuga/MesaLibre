@@ -1,9 +1,10 @@
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 import { calculateBill, type Bill } from "@/features/orders/services/bill";
 
 /** The open order of a table, with its items, or null if the table has no open bill. */
 export async function getOpenOrder(tableId: string) {
+  const prisma = getPrisma();
   return prisma.order.findFirst({
     where: { tableId, status: "OPEN" },
     include: {
@@ -23,6 +24,7 @@ export type OpenOrder = NonNullable<Awaited<ReturnType<typeof getOpenOrder>>>;
 
 /** Open tables for the admin dashboard: every OPEN order with its bill status. */
 export async function getOpenTables(restaurantId: string) {
+  const prisma = getPrisma();
   const orders = await prisma.order.findMany({
     where: { status: "OPEN", table: { restaurantId } },
     orderBy: { createdAt: "asc" },

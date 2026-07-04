@@ -1,5 +1,7 @@
 # MesaLibre
 
+[![CI](https://github.com/dev-tuga/MesaLibre/actions/workflows/ci.yml/badge.svg)](https://github.com/dev-tuga/MesaLibre/actions/workflows/ci.yml)
+
 Pay-at-table platform for restaurants: guests scan a QR code on their table, browse the digital
 menu, add items to a shared bill, split the payment between friends (with tip), and leave a review
 — all from their phone, no app install required. Restaurant staff manage the menu, open tables and
@@ -14,6 +16,22 @@ payment history from an admin dashboard.
 - [Zod](https://zod.dev/) for validation at every boundary
 - NextAuth (credentials) for the admin panel
 - Vitest for unit tests
+
+## Screenshots
+
+Guest flow (mobile):
+
+| Menu                                                  | Shared bill                                                | Split payment                                        | Review                                                   |
+| ----------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------- |
+| ![Carta digital](docs/screenshots/guest-01-carta.png) | ![Cuenta de la mesa](docs/screenshots/guest-02-cuenta.png) | ![Pago dividido](docs/screenshots/guest-03-pago.png) | ![Calificación](docs/screenshots/guest-04-calificar.png) |
+
+Admin panel (desktop):
+
+| Overview                                               | Menu CRUD                                     |
+| ------------------------------------------------------ | --------------------------------------------- |
+| ![Resumen](docs/screenshots/admin-01-resumen.png)      | ![Carta](docs/screenshots/admin-02-carta.png) |
+| **Printable QR sheet**                                 | **Payment history**                           |
+| ![QR de mesas](docs/screenshots/admin-03-qr-mesas.png) | ![Pagos](docs/screenshots/admin-04-pagos.png) |
 
 ## Getting started
 
@@ -90,6 +108,93 @@ ADR-010), so no extra auth configuration is needed in development.
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    subgraph Clients
+        phone["Guest phone<br/>(QR, no login)"]
+        desktop["Admin browser<br/>(NextAuth session)"]
+    end
+
+    subgraph next["Next.js 15 · App Router"]
+        pub["(public)/r/[slug]/[table]<br/>Server Components"]
+        dash["(admin)/dashboard<br/>Server Components"]
+        actions["Server actions<br/>(Zod validation + orchestration)"]
+        services["features/*/services<br/>pure business logic"]
+        provider["PaymentProvider"]
+        mock["MockPaymentProvider"]
+    end
+
+    db[("PostgreSQL<br/>via Prisma")]
+
+    phone --> pub
+    desktop --> dash
+    pub --> actions
+    dash --> actions
+    actions --> services
+    actions --> provider
+    provider -.implements.- mock
+    actions --> db
+    pub --> db
+    dash --> db
+```
+
+Data model:
+
+```mermaid
+erDiagram
+    Restaurant ||--o{ Table : has
+    Restaurant ||--o{ Category : has
+    Restaurant ||--o{ AdminUser : "is managed by"
+    Category ||--o{ Product : contains
+    Table ||--o{ Order : opens
+    Order ||--o{ OrderItem : includes
+    Order ||--o{ Payment : "is settled by"
+    Order ||--o| Review : receives
+    Product ||--o{ OrderItem : "is snapshotted in"
+
+    Restaurant {
+        string slug UK
+        string name
+        string logoUrl
+    }
+    Table {
+        int number
+        string qrToken UK
+    }
+    Category {
+        string name
+        int position
+    }
+    Product {
+        string name
+        int priceClp
+        boolean available
+    }
+    Order {
+        enum status "OPEN | PAID"
+        datetime closedAt
+    }
+    OrderItem {
+        int quantity
+        int unitPriceClp
+    }
+    Payment {
+        int amountClp
+        int tipClp
+        enum method
+        int splitCount
+        string providerRef
+    }
+    Review {
+        int rating "1-5"
+        string comment
+    }
+    AdminUser {
+        string email UK
+        string passwordHash
+    }
+```
+
 Feature-based structure with thin layers:
 
 ```
@@ -98,7 +203,7 @@ src/
 │   ├── (public)/r/[slug]/[table]/   # guest-facing menu & bill
 │   ├── (admin)/dashboard/           # restaurant admin panel
 │   └── api/
-├── features/{menu,orders,payments,feedback}/
+├── features/{menu,orders,payments,feedback,tables}/
 │   ├── components/
 │   ├── actions/      # server actions: validate (Zod) + orchestrate only
 │   ├── services/     # business logic as pure functions, no direct I/O
@@ -117,3 +222,7 @@ Ground rules:
 - Types are derived from Prisma and `z.infer`, never duplicated by hand.
 
 Design decisions are recorded in [docs/decisions.md](docs/decisions.md).
+
+## License
+
+[MIT](LICENSE)

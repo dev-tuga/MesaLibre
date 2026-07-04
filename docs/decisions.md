@@ -184,3 +184,24 @@ because `trustHost: true` derives auth callback URLs from each request's Host he
 var is stale, QR codes point at the wrong host — the README documents the setup steps. Pinning
 `AUTH_URL` would break same-app access through two hosts (localhost for the admin, LAN IP for
 phones), which is exactly the dev workflow we want.
+
+---
+
+## ADR-011: Server-rendered QR codes with `uqr`
+
+**Status:** accepted
+
+**Context:** The admin panel needs a QR per table and a printable sheet. Client-side generation
+(e.g. `qrcode.react`) ships React components and canvas logic to the browser for content that is
+completely static per request; heavier libraries (`node-qrcode`) pull in image encoders we don't
+need when SVG suffices.
+
+**Decision:** Generate QR codes in Server Components with `uqr` (zero runtime dependencies,
+maintained under the unjs umbrella), rendering inline SVG. SVG scales losslessly for print, needs
+no `<img>` round-trip and adds zero client-side JavaScript. Error correction level M is enough for
+clean on-screen/printed codes. Tokens are regenerated with 12 bytes of `crypto.randomBytes`
+(base64url), invalidating the previous QR instantly.
+
+**Consequences:** QR generation cost lives on the server per render — negligible at this scale.
+If codes ever need client-side interactivity (e.g. download as PNG), a small client wrapper can
+reuse the same URLs.

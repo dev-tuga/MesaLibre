@@ -9,7 +9,7 @@ import {
   isFullyPaid,
   remainingBalance,
 } from "@/features/payments/services/quote";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 function sumPaid(payments: { amountClp: number }[]): number {
   return payments.reduce((sum, p) => sum + p.amountClp, 0);
@@ -38,6 +38,7 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
     return { ok: false, error: "No hay una cuenta abierta para pagar." };
   }
 
+  const prisma = getPrisma();
   const payments = await prisma.payment.findMany({
     where: { orderId: order.id },
     select: { amountClp: true },

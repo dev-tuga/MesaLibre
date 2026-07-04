@@ -9,7 +9,7 @@ import { ReviewForm } from "@/features/feedback/components/review-form";
 import { canReviewOrder } from "@/features/feedback/services/review";
 import { getTableByQrToken } from "@/features/menu/queries";
 import { tableRouteParamsSchema } from "@/features/menu/schemas/route-params";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 const paramsSchema = tableRouteParamsSchema.extend({
   orderId: z.string().min(1).max(100),
@@ -30,6 +30,7 @@ export default async function ReviewPage({ params }: PageProps) {
   const table = await getTableByQrToken(parsed.data.slug, parsed.data.table);
   if (!table) notFound();
 
+  const prisma = getPrisma();
   const order = await prisma.order.findFirst({
     where: { id: parsed.data.orderId, tableId: table.id },
     include: { review: { select: { id: true } } },

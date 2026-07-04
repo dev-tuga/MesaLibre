@@ -4,7 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 
 import { env } from "@/lib/env";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 declare module "next-auth" {
   interface Session {
@@ -45,6 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        const prisma = getPrisma();
         const admin = await prisma.adminUser.findUnique({
           where: { email: parsed.data.email.toLowerCase() },
         });
