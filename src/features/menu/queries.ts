@@ -10,7 +10,7 @@ export async function getTableByQrToken(slug: string, qrToken: string) {
   const prisma = getPrisma();
   const table = await prisma.table.findUnique({
     where: { qrToken },
-    include: { restaurant: true },
+    include: { restaurant: { select: { name: true, slug: true, googlePlaceId: true } } },
   });
 
   if (!table || table.restaurant.slug !== slug) {
