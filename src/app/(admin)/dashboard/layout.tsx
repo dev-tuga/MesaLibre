@@ -11,6 +11,7 @@ import {
   canManageStaff,
   canViewAllTables,
   canViewPerformance,
+  canViewReviews,
 } from "@/lib/staff-auth";
 import { logout } from "../login/actions";
 
@@ -38,6 +39,10 @@ function buildNavItems(role: StaffRole) {
     items.push({ href: "/dashboard/desempeno", label: "Desempeño" });
   }
 
+  if (canViewReviews(role)) {
+    items.push({ href: "/dashboard/calificaciones", label: "Calificaciones" });
+  }
+
   return items;
 }
 
@@ -52,7 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="bg-muted/40 min-h-screen print:bg-white">
       <header className="bg-background border-b print:hidden">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2 font-semibold">
             <UtensilsCrossed className="size-5" aria-hidden />
             MesaLibre
@@ -69,8 +74,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </form>
           </div>
         </div>
-        <nav aria-label="Secciones del panel" className="mx-auto max-w-5xl px-4">
-          <ul className="flex gap-1 overflow-x-auto pb-2">
+        <nav aria-label="Secciones del panel" className="mx-auto max-w-6xl px-4 sm:px-6">
+          <ul className="flex gap-1 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {navItems.map((item) => (
               <li key={item.href}>
                 <Link
@@ -84,7 +89,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </ul>
         </nav>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{children}</main>
     </div>
   );
 }

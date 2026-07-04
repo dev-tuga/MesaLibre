@@ -20,6 +20,10 @@ export function canViewPerformance(role: StaffRole): boolean {
   return role === "OWNER" || role === "MANAGER";
 }
 
+export function canViewReviews(role: StaffRole): boolean {
+  return role === "OWNER" || role === "MANAGER";
+}
+
 export function canManageMenu(role: StaffRole): boolean {
   return role === "OWNER" || role === "MANAGER";
 }

@@ -29,10 +29,11 @@ import { staffRoleLabel } from "@/features/staff/labels";
 import { RegenerateTokenButton } from "@/features/tables/components/regenerate-token-button";
 import { TableQr } from "@/features/tables/components/table-qr";
 import { getTablesForAdmin } from "@/features/tables/queries";
-import { env } from "@/lib/env";
+import { getPublicBaseUrl } from "@/lib/app-url";
 import { formatClp, formatDateTime } from "@/lib/format";
 import { canManageStaff, canViewAllTables } from "@/lib/staff-auth";
 import { buildTableUrl } from "@/lib/urls";
+import { ResponsiveTable } from "@/components/responsive-table";
 
 export const metadata: Metadata = {
   title: "Mesas abiertas",
@@ -61,6 +62,8 @@ export default async function OpenTablesPage() {
         restaurantId,
         allTables.map((table) => table.id),
       );
+
+  const baseUrl = await getPublicBaseUrl();
 
   const myTables = isManager
     ? allTables.filter((table) => assignmentByTable.get(table.id)?.staff.id === session.user.id)
@@ -99,7 +102,7 @@ export default async function OpenTablesPage() {
             : "No tienes mesas abiertas asignadas. Toma una mesa para comenzar."}
         </p>
       ) : (
-        <div className="bg-card rounded-xl border">
+        <ResponsiveTable>
           <Table>
             <TableHeader>
               <TableRow>
@@ -147,7 +150,7 @@ export default async function OpenTablesPage() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </ResponsiveTable>
       )}
 
       <section aria-labelledby="mesas-asignacion" className="space-y-3">
@@ -212,7 +215,7 @@ export default async function OpenTablesPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {allTables.map((table) => {
               const url = buildTableUrl(
-                env.NEXT_PUBLIC_APP_BASE_URL,
+                baseUrl,
                 table.restaurant.slug,
                 table.qrToken,
               );

@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { Pool } from "pg";
 
 import { buildTableUrl } from "../src/lib/urls";
+import { getProductImageUrl } from "../src/lib/product-images";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -20,7 +21,7 @@ const RESTAURANT_SLUG = "la-picada-del-puerto";
 
 const menu: {
   category: string;
-  products: { name: string; description: string; priceClp: number }[];
+  products: { name: string; description: string; priceClp: number; imageUrl?: string }[];
 }[] = [
   {
     category: "Para picar",
@@ -171,7 +172,10 @@ async function main() {
           position: categoryIndex,
           products: {
             create: category.products.map((product, productIndex) => ({
-              ...product,
+              name: product.name,
+              description: product.description,
+              priceClp: product.priceClp,
+              imageUrl: product.imageUrl ?? getProductImageUrl(null, category.category),
               position: productIndex,
             })),
           },

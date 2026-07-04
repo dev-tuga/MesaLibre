@@ -5,6 +5,7 @@ import {
   canManageStaff,
   canViewAllTables,
   canViewPerformance,
+  canViewReviews,
   isManagerOrOwner,
 } from "@/lib/staff-auth";
 
@@ -22,10 +23,12 @@ describe("staff permissions", () => {
     expect(canManageMenu("WAITER")).toBe(false);
   });
 
-  it("waiters cannot view all tables or performance dashboards", () => {
+  it("waiters cannot view all tables, performance, or reviews", () => {
     expect(canViewAllTables("WAITER")).toBe(false);
     expect(canViewPerformance("WAITER")).toBe(false);
+    expect(canViewReviews("WAITER")).toBe(false);
     expect(canViewAllTables("OWNER")).toBe(true);
     expect(canViewPerformance("MANAGER")).toBe(true);
+    expect(canViewReviews("OWNER")).toBe(true);
   });
 });

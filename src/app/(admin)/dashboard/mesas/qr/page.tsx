@@ -8,7 +8,7 @@ import { PrintButton } from "@/features/tables/components/print-button";
 import { TableQr } from "@/features/tables/components/table-qr";
 import { getTablesForAdmin } from "@/features/tables/queries";
 import { getAdminSession } from "@/lib/auth";
-import { env } from "@/lib/env";
+import { getPublicBaseUrl } from "@/lib/app-url";
 import { buildTableUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
@@ -20,6 +20,7 @@ export default async function TableQrSheetPage() {
   if (!session) redirect("/login");
 
   const tables = await getTablesForAdmin(session.user.restaurantId);
+  const baseUrl = await getPublicBaseUrl();
 
   return (
     <div className="space-y-6">
@@ -43,7 +44,7 @@ export default async function TableQrSheetPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 print:grid-cols-2 print:gap-6">
         {tables.map((table) => {
           const url = buildTableUrl(
-            env.NEXT_PUBLIC_APP_BASE_URL,
+            baseUrl,
             table.restaurant.slug,
             table.qrToken,
           );

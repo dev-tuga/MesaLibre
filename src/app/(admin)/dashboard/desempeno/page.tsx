@@ -2,6 +2,7 @@ import type { StaffRole } from "@prisma/client";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { ResponsiveTable } from "@/components/responsive-table";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -34,13 +35,13 @@ export default async function PerformancePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Desempeño del equipo</h1>
-        <p className="text-muted-foreground text-sm">
-          Métricas del día por garzón: mesas atendidas, ventas, propinas y calificación.
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Desempeño del equipo</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
+          Métricas del día por garzón: mesas atendidas, ventas y propinas.
         </p>
       </div>
 
-      <div className="bg-card rounded-xl border">
+      <ResponsiveTable>
         <Table>
           <TableHeader>
             <TableRow>
@@ -50,7 +51,6 @@ export default async function PerformancePage() {
               <TableHead className="text-right">Cuentas cerradas</TableHead>
               <TableHead className="text-right">Ventas</TableHead>
               <TableHead className="text-right">Propinas</TableHead>
-              <TableHead className="text-right">Calificación</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -64,12 +64,11 @@ export default async function PerformancePage() {
                 <TableCell className="text-right tabular-nums">{row.ordersClosed}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatClp(row.salesClp)}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatClp(row.tipsClp)}</TableCell>
-                <TableCell className="text-right tabular-nums">{row.avgRating ?? "—"}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </div>
+      </ResponsiveTable>
     </div>
   );
 }

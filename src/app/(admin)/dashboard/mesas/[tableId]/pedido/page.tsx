@@ -17,7 +17,7 @@ import { assertStaffTableAccess } from "@/features/staff/actions/table-service-a
 import { getActiveTableService } from "@/features/staff/queries/table-service";
 import { getStaffSession } from "@/features/staff/session";
 import { staffRoleLabel } from "@/features/staff/labels";
-import { env } from "@/lib/env";
+import { getPublicBaseUrl } from "@/lib/app-url";
 import { formatClp } from "@/lib/format";
 import { canViewAllTables } from "@/lib/staff-auth";
 import { buildTableUrl } from "@/lib/urls";
@@ -70,7 +70,7 @@ export default async function WaiterOrderPage({ params }: PageProps) {
   }
 
   const guestUrl = buildTableUrl(
-    env.NEXT_PUBLIC_APP_BASE_URL,
+    await getPublicBaseUrl(),
     context.table.restaurantSlug,
     context.table.qrToken,
   );
@@ -79,7 +79,7 @@ export default async function WaiterOrderPage({ params }: PageProps) {
   const canEdit = isManager || (access.ok && !needsClaim);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start lg:gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="icon" aria-label="Volver a mesas">

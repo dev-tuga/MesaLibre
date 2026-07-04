@@ -8,7 +8,6 @@ export type StaffPerformanceRow = {
   ordersClosed: number;
   salesClp: number;
   tipsClp: number;
-  avgRating: number | null;
 };
 
 /** Aggregated waiter performance for owners and managers. */
@@ -59,7 +58,6 @@ export async function getStaffPerformance(
       id: true,
       servedByStaffId: true,
       payments: { select: { amountClp: true, tipClp: true } },
-      review: { select: { rating: true } },
     },
   });
 
@@ -70,10 +68,7 @@ export async function getStaffPerformance(
     tablesByStaff.set(service.staffUserId, set);
   }
 
-  const metricsByStaff = new Map<
-    string,
-    { orders: number; sales: number; tips: number; ratings: number[] }
-  >();
+  const metricsByStaff = new Map<string, { orders: number; sales: number; tips: number }>();
 
   for (const order of orders) {
     const staffId = order.servedByStaffId!;
@@ -81,22 +76,17 @@ export async function getStaffPerformance(
       orders: 0,
       sales: 0,
       tips: 0,
-      ratings: [],
     };
     current.orders += 1;
     for (const payment of order.payments) {
       current.sales += payment.amountClp;
       current.tips += payment.tipClp;
     }
-    if (order.review) {
-      current.ratings.push(order.review.rating);
-    }
     metricsByStaff.set(staffId, current);
   }
 
   return staff.map((member) => {
     const metrics = metricsByStaff.get(member.id);
-    const ratings = metrics?.ratings ?? [];
     return {
       staffId: member.id,
       staffName: member.name,
@@ -105,10 +95,6 @@ export async function getStaffPerformance(
       ordersClosed: metrics?.orders ?? 0,
       salesClp: metrics?.sales ?? 0,
       tipsClp: metrics?.tips ?? 0,
-      avgRating:
-        ratings.length > 0
-          ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
-          : null,
     };
   });
 }

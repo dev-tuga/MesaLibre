@@ -25,3 +25,34 @@ export async function getReviewSummary(restaurantId: string, limit = 5) {
     recent,
   };
 }
+
+/** Full review list for the owner/admin ratings tab. */
+export async function getReviewsForAdmin(restaurantId: string, limit = 100) {
+  const prisma = getPrisma();
+  const [aggregate, reviews] = await Promise.all([
+    prisma.review.aggregate({
+      where: { order: { table: { restaurantId } } },
+      _avg: { rating: true },
+      _count: true,
+    }),
+    prisma.review.findMany({
+      where: { order: { table: { restaurantId } } },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      include: {
+        order: {
+          select: {
+            table: { select: { number: true } },
+            servedBy: { select: { name: true } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    averageRating: aggregate._avg.rating,
+    totalReviews: aggregate._count,
+    reviews,
+  };
+}
