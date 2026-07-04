@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/features/orders/schemas/order";
 import { regenerateQrTokenSchema } from "@/features/tables/schemas/table";
 import { getAdminSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 /** 12 random bytes -> 16 url-safe chars; plenty of entropy for a table token. */
 function newQrToken(): string {
@@ -26,6 +26,7 @@ export async function regenerateQrToken(rawInput: unknown): Promise<ActionResult
   const parsed = regenerateQrTokenSchema.safeParse(rawInput);
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
 
+  const prisma = getPrisma();
   const { count } = await prisma.table.updateMany({
     where: { id: parsed.data.tableId, restaurantId: session.user.restaurantId },
     data: { qrToken: newQrToken() },

@@ -8,7 +8,7 @@ import {
   removeItemSchema,
   type ActionResult,
 } from "@/features/orders/schemas/order";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 function tablePaths(slug: string, qrToken: string): string[] {
   const base = `/r/${slug}/${qrToken}`;
@@ -33,6 +33,7 @@ export async function addItemToOrder(rawInput: unknown): Promise<ActionResult> {
     return { ok: false, error: "Mesa no encontrada." };
   }
 
+  const prisma = getPrisma();
   const product = await prisma.product.findFirst({
     where: { id: productId, available: true, category: { restaurantId: table.restaurantId } },
   });
@@ -99,6 +100,7 @@ export async function removeOrderItem(rawInput: unknown): Promise<ActionResult> 
     return { ok: false, error: "Mesa no encontrada." };
   }
 
+  const prisma = getPrisma();
   const { count } = await prisma.orderItem.deleteMany({
     where: {
       id: orderItemId,

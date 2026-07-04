@@ -1,0 +1,5 @@
+NEXTJS_ENV=development
+DATABASE_URL=postgresql://mesalibre:mesalibre@localhost:5432/mesalibre
+AUTH_SECRET=replace-me-with-a-random-32-byte-base64-string
+PAYMENT_PROVIDER=mock
+NEXT_PUBLIC_APP_BASE_URL=http://localhost:3000

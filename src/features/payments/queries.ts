@@ -1,7 +1,8 @@
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 /** Latest payments of a restaurant for the admin history view. */
 export async function getPaymentHistory(restaurantId: string, limit = 50) {
+  const prisma = getPrisma();
   return prisma.payment.findMany({
     where: { order: { table: { restaurantId } } },
     orderBy: { createdAt: "desc" },
@@ -22,6 +23,7 @@ export type PaymentHistoryEntry = Awaited<ReturnType<typeof getPaymentHistory>>[
 
 /** Aggregates shown on the dashboard overview. */
 export async function getPaymentStats(restaurantId: string) {
+  const prisma = getPrisma();
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 

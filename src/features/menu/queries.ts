@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 /**
  * Resolves a table from the public URL (`/r/[slug]/[qrToken]`).
@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
  * restaurant's URL.
  */
 export async function getTableByQrToken(slug: string, qrToken: string) {
+  const prisma = getPrisma();
   const table = await prisma.table.findUnique({
     where: { qrToken },
     include: { restaurant: true },
@@ -21,6 +22,7 @@ export async function getTableByQrToken(slug: string, qrToken: string) {
 
 /** Menu of a restaurant: visible categories with their available products, in display order. */
 export async function getMenu(restaurantId: string) {
+  const prisma = getPrisma();
   return prisma.category.findMany({
     where: { restaurantId, products: { some: { available: true } } },
     orderBy: { position: "asc" },
@@ -38,6 +40,7 @@ export type TableWithRestaurant = NonNullable<Awaited<ReturnType<typeof getTable
 
 /** Full menu for the admin panel, including unavailable products and empty categories. */
 export async function getMenuForAdmin(restaurantId: string) {
+  const prisma = getPrisma();
   return prisma.category.findMany({
     where: { restaurantId },
     orderBy: { position: "asc" },

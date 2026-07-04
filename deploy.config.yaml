@@ -1,0 +1,30 @@
+# Cloudflare deployment configuration for MesaLibre
+# See docs/agent-cloudflare-pages.md for the generic guide.
+
+pages_project_slug: "mesalibre"
+git_remote_url: "https://github.com/dev-tuga/MesaLibre"
+production_branch: "main"
+preview_branch: "feat/phase-11-docs-ci"
+custom_domain: ""
+build_command: "pnpm build"
+deploy_command: "pnpm deploy"
+upload_command: "pnpm upload"
+output_directory: ".open-next"
+root_directory: "/"
+node_version: "22"
+framework: "Next.js 15 + @opennextjs/cloudflare (Workers)"
+production_url: "https://mesalibre.workers.dev/"
+preview_url: "https://feat-phase-11-docs-ci.mesalibre.pages.dev/"
+env_vars:
+  - name: "DATABASE_URL"
+    required: true
+    source: ".env.example — use Hyperdrive binding in production"
+  - name: "AUTH_SECRET"
+    required: true
+    source: ".env.example"
+  - name: "PAYMENT_PROVIDER"
+    required: false
+    source: ".env.example"
+  - name: "NEXT_PUBLIC_APP_BASE_URL"
+    required: true
+    source: ".env.example — set to production Workers URL"

@@ -4,7 +4,7 @@ import { getTableByQrToken } from "@/features/menu/queries";
 import type { ActionResult } from "@/features/orders/schemas/order";
 import { submitReviewSchema } from "@/features/feedback/schemas/review";
 import { canReviewOrder } from "@/features/feedback/services/review";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 /** Persists the post-payment review of a paid order, once per order. */
 export async function submitReview(rawInput: unknown): Promise<ActionResult> {
@@ -19,6 +19,7 @@ export async function submitReview(rawInput: unknown): Promise<ActionResult> {
     return { ok: false, error: "Mesa no encontrada." };
   }
 
+  const prisma = getPrisma();
   const order = await prisma.order.findFirst({
     where: { id: orderId, tableId: table.id },
     include: { review: { select: { id: true } } },
