@@ -5,6 +5,11 @@ import { getOpenOrder, toBill } from "@/features/orders/queries";
 import { getPaymentProvider } from "@/features/payments/providers";
 import { payOrderSchema, type PayOrderResult } from "@/features/payments/schemas/payment";
 import {
+  computeBillLineAvailability,
+  type ItemSelection,
+} from "@/features/payments/services/item-allocation";
+import {
+  buildItemPaymentQuote,
   buildPaymentQuote,
   isFullyPaid,
   remainingBalance,
@@ -15,19 +20,19 @@ function sumPaid(payments: { amountClp: number }[]): number {
   return payments.reduce((sum, p) => sum + p.amountClp, 0);
 }
 
-/**
- * Charges one share of the table's open bill (everything, or 1 of N parts
- * of what is left) plus the chosen tip. Amounts are always recomputed
- * server-side; the client's preview is never trusted. When the payment
- * settles the bill, the order is closed atomically with the payment record.
- */
+function flattenAllocations(
+  payments: { itemAllocations: { orderItemId: string; quantity: number }[] }[],
+) {
+  return payments.flatMap((payment) => payment.itemAllocations);
+}
+
 export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
   const parsed = payOrderSchema.safeParse(rawInput);
   if (!parsed.success) {
     return { ok: false, error: "Datos inválidos." };
   }
-  const { slug, qrToken, splitCount, tip } = parsed.data;
 
+  const { slug, qrToken, tip, method } = parsed.data;
   const table = await getTableByQrToken(slug, qrToken);
   if (!table) {
     return { ok: false, error: "Mesa no encontrada." };
@@ -50,9 +55,33 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
     return { ok: false, error: "La cuenta ya está pagada." };
   }
 
+  const lineAvailability = computeBillLineAvailability(
+    order.items,
+    flattenAllocations(order.payments),
+  );
+
   let quote;
+  let splitMode: "EQUAL" | "BY_ITEMS";
+  let splitCount = 1;
+  let selections: ItemSelection[] = [];
+
   try {
-    quote = buildPaymentQuote({ remainingClp, splitCount, tip });
+    if (parsed.data.splitMode === "EQUAL") {
+      splitMode = "EQUAL";
+      splitCount = parsed.data.splitCount;
+      quote = buildPaymentQuote({ remainingClp, splitCount, tip });
+    } else {
+      splitMode = "BY_ITEMS";
+      selections = parsed.data.selections;
+      quote = buildItemPaymentQuote({
+        lines: lineAvailability,
+        selections,
+        tip,
+      });
+      if (quote.amountClp > remainingClp) {
+        return { ok: false, error: "La selección supera el saldo pendiente." };
+      }
+    }
   } catch {
     return { ok: false, error: "No se pudo calcular el monto a pagar." };
   }
@@ -61,6 +90,7 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
   const charge = await provider.charge({
     amountClp: quote.amountClp,
     tipClp: quote.tipClp,
+    method,
     description: `${table.restaurant.name} — Mesa ${table.number}`,
     metadata: { orderId: order.id, restaurantSlug: slug },
   });
@@ -71,8 +101,6 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
 
   const orderClosed = await prisma
     .$transaction(async (tx) => {
-      // Re-check inside the transaction: someone else may have paid while
-      // the provider round-trip was in flight.
       const currentPayments = await tx.payment.findMany({
         where: { orderId: order.id },
         select: { amountClp: true },
@@ -87,9 +115,25 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
           orderId: order.id,
           amountClp: quote.amountClp,
           tipClp: quote.tipClp,
-          method: "CARD",
+          method,
+          splitMode,
           splitCount,
           providerRef: charge.providerRef,
+          itemAllocations:
+            splitMode === "BY_ITEMS"
+              ? {
+                  create: selections.map((selection) => {
+                    const line = lineAvailability.find(
+                      (row) => row.orderItemId === selection.orderItemId,
+                    )!;
+                    return {
+                      orderItemId: selection.orderItemId,
+                      quantity: selection.quantity,
+                      amountClp: line.unitPriceClp * selection.quantity,
+                    };
+                  }),
+                }
+              : undefined,
         },
       });
 
@@ -117,13 +161,6 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
     };
   }
 
-  // No revalidatePath here, on purpose: revalidating would make the router
-  // re-render the pay page as part of this action's response, and once the
-  // bill is settled that page redirects away — unmounting the success
-  // screen the payer is about to see. All public pages are dynamic (no
-  // client-side caching), so other views pick the payment up on their next
-  // fetch, and amounts are always recomputed server-side anyway.
-
   return {
     ok: true,
     orderId: order.id,
@@ -131,5 +168,6 @@ export async function payOrder(rawInput: unknown): Promise<PayOrderResult> {
     tipClp: quote.tipClp,
     totalClp: quote.totalClp,
     orderClosed,
+    method,
   };
 }

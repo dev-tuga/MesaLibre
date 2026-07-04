@@ -22,6 +22,13 @@ export class MockPaymentProvider implements PaymentProvider {
 
     await new Promise((resolve) => setTimeout(resolve, this.latencyMs));
 
-    return { status: "approved", providerRef: `mock_${randomUUID()}` };
+    const prefix =
+      request.method === "APPLE_PAY"
+        ? "mock_apple"
+        : request.method === "GOOGLE_PAY"
+          ? "mock_google"
+          : "mock_card";
+
+    return { status: "approved", providerRef: `${prefix}_${randomUUID()}` };
   }
 }

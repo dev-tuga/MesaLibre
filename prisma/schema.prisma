@@ -12,8 +12,10 @@ model Restaurant {
   id        String   @id @default(cuid())
   slug      String   @unique
   name      String
-  logoUrl   String?
-  createdAt DateTime @default(now())
+  logoUrl        String?
+  /// Google Maps Place ID for post-payment review deep links.
+  googlePlaceId  String?
+  createdAt      DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   tables     Table[]
@@ -106,27 +108,50 @@ model OrderItem {
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  allocations PaymentItemAllocation[]
 }
 
 enum PaymentMethod {
   CARD
+  APPLE_PAY
+  GOOGLE_PAY
+}
+
+enum PaymentSplitMode {
+  EQUAL
+  BY_ITEMS
 }
 
 model Payment {
-  id          String        @id @default(cuid())
+  id          String            @id @default(cuid())
   orderId     String
   /// Share of the bill covered by this payment, tip excluded.
   amountClp   Int
-  tipClp      Int           @default(0)
-  method      PaymentMethod @default(CARD)
+  tipClp      Int               @default(0)
+  method      PaymentMethod     @default(CARD)
+  splitMode   PaymentSplitMode  @default(EQUAL)
   /// Number of equal parts the bill was split into when this payment
   /// was made (1 = the payer covered the whole remaining bill).
-  splitCount  Int           @default(1)
+  splitCount  Int               @default(1)
   /// Reference returned by the payment provider.
   providerRef String?
-  createdAt   DateTime      @default(now())
+  createdAt   DateTime          @default(now())
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order           Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemAllocations PaymentItemAllocation[]
+}
+
+model PaymentItemAllocation {
+  id          String @id @default(cuid())
+  paymentId   String
+  orderItemId String
+  quantity    Int
+  amountClp   Int
+
+  payment   Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+
+  @@unique([paymentId, orderItemId])
 }
 
 model Review {

@@ -9,6 +9,7 @@ import { getTableByQrToken } from "@/features/menu/queries";
 import { tableRouteParamsSchema } from "@/features/menu/schemas/route-params";
 import { getOpenOrder, toBill } from "@/features/orders/queries";
 import { PaymentPanel } from "@/features/payments/components/payment-panel";
+import { computeBillLineAvailability } from "@/features/payments/services/item-allocation";
 import { remainingBalance } from "@/features/payments/services/quote";
 import { formatClp } from "@/lib/format";
 
@@ -42,8 +43,11 @@ export default async function PayBillPage({ params }: PageProps) {
     redirect(billHref);
   }
 
+  const allocations = order.payments.flatMap((payment) => payment.itemAllocations);
+  const lines = computeBillLineAvailability(order.items, allocations);
+
   return (
-    <main className="mx-auto min-h-screen max-w-xl px-4 pb-16">
+    <main className="to-background mx-auto min-h-screen max-w-xl bg-gradient-to-b from-slate-50 px-4 pb-16 dark:from-slate-950">
       <header className="flex items-center justify-between gap-3 py-5">
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="icon" aria-label="Volver a la cuenta">
@@ -52,16 +56,16 @@ export default async function PayBillPage({ params }: PageProps) {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Pagar</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Pagar cuenta</h1>
             <p className="text-muted-foreground text-sm">{table.restaurant.name}</p>
           </div>
         </div>
-        <Badge variant="secondary" className="text-sm">
+        <Badge variant="secondary" className="rounded-full text-sm">
           Mesa {table.number}
         </Badge>
       </header>
 
-      <div className="bg-card mb-6 rounded-xl border p-4">
+      <div className="bg-card mb-6 rounded-2xl border p-4 shadow-sm">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Total de la cuenta</span>
           <span className="font-medium tabular-nums">{formatClp(bill.totalClp)}</span>
@@ -84,6 +88,10 @@ export default async function PayBillPage({ params }: PageProps) {
         slug={parsed.data.slug}
         qrToken={parsed.data.table}
         remainingClp={remainingClp}
+        headCount={order.headCount}
+        restaurantName={table.restaurant.name}
+        googlePlaceId={table.restaurant.googlePlaceId}
+        lines={lines}
       />
     </main>
   );

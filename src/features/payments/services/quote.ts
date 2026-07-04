@@ -1,5 +1,10 @@
 import { nextShare } from "@/features/payments/services/split";
 import { calculateTipFromPercent } from "@/features/payments/services/tip";
+import type { ItemSelection } from "@/features/payments/services/item-allocation";
+import {
+  sumItemSelection,
+  type BillLineAvailability,
+} from "@/features/payments/services/item-allocation";
 
 export type TipChoice =
   { type: "percent"; percent: number } | { type: "custom"; amountClp: number };
@@ -53,4 +58,16 @@ export function buildPaymentQuote(input: {
   }
 
   return { amountClp, tipClp, totalClp: amountClp + tipClp };
+}
+
+/**
+ * Quote for a payer who selected specific bill lines (by-consumption split).
+ */
+export function buildItemPaymentQuote(input: {
+  lines: BillLineAvailability[];
+  selections: ItemSelection[];
+  tip: TipChoice;
+}): PaymentQuote {
+  const amountClp = sumItemSelection(input.lines, input.selections);
+  return buildPaymentQuote({ remainingClp: amountClp, splitCount: 1, tip: input.tip });
 }

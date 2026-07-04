@@ -39,7 +39,7 @@ export function WaiterMenuPicker({ tableId, categories, disabled }: WaiterMenuPi
       ) : (
         categories.map((category) => (
           <div key={category.id} className="space-y-2">
-            <h3 className="text-muted-foreground text-sm font-medium uppercase tracking-wide">
+            <h3 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
               {category.name}
             </h3>
             <ul className="space-y-2">

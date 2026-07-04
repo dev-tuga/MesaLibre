@@ -3,8 +3,7 @@ import { z } from "zod";
 import { tableIdentitySchema } from "@/features/orders/schemas/order";
 import { TIP_PERCENT_OPTIONS } from "@/features/payments/services/tip";
 
-export const MAX_SPLIT_COUNT = 12;
-/** Sanity cap so a typo in the custom tip field cannot charge a fortune. */
+export const MAX_SPLIT_COUNT = 20;
 export const MAX_CUSTOM_TIP_CLP = 500_000;
 
 const tipChoiceSchema = z.discriminatedUnion("type", [
@@ -18,10 +17,31 @@ const tipChoiceSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-export const payOrderSchema = tableIdentitySchema.extend({
+const paymentMethodSchema = z.enum(["CARD", "APPLE_PAY", "GOOGLE_PAY"]);
+
+const itemSelectionSchema = z.object({
+  orderItemId: z.string().min(1),
+  quantity: z.number().int().min(1).max(50),
+});
+
+const equalSplitSchema = tableIdentitySchema.extend({
+  splitMode: z.literal("EQUAL"),
   splitCount: z.number().int().min(1).max(MAX_SPLIT_COUNT),
   tip: tipChoiceSchema,
+  method: paymentMethodSchema.default("CARD"),
 });
+
+const byItemsSplitSchema = tableIdentitySchema.extend({
+  splitMode: z.literal("BY_ITEMS"),
+  selections: z.array(itemSelectionSchema).min(1),
+  tip: tipChoiceSchema,
+  method: paymentMethodSchema.default("CARD"),
+});
+
+export const payOrderSchema = z.discriminatedUnion("splitMode", [
+  equalSplitSchema,
+  byItemsSplitSchema,
+]);
 
 export type PayOrderInput = z.infer<typeof payOrderSchema>;
 
@@ -32,7 +52,7 @@ export type PayOrderResult =
       amountClp: number;
       tipClp: number;
       totalClp: number;
-      /** True when this payment settled the bill and closed the order. */
       orderClosed: boolean;
+      method: z.infer<typeof paymentMethodSchema>;
     }
   | { ok: false; error: string };
