@@ -4,12 +4,12 @@ MesaLibre usa **Next.js 15 + OpenNext** (`@opennextjs/cloudflare`) sobre **Cloud
 
 ## Requisitos
 
-| Recurso | Detalle |
-|---------|---------|
-| **Cloudflare Workers Paid** | El bundle (~9.5 MB) supera el límite de 1 MB del plan gratuito. Paid permite hasta 10 MB. |
-| **PostgreSQL accesible** | Neon, Supabase, RDS, etc. |
-| **Hyperdrive** (recomendado) | Pool de conexiones desde Workers hacia Postgres |
-| **Secrets** | `AUTH_SECRET`, `DATABASE_URL`, `NEXT_PUBLIC_APP_BASE_URL`, `PAYMENT_PROVIDER` |
+| Recurso                      | Detalle                                                                                   |
+| ---------------------------- | ----------------------------------------------------------------------------------------- |
+| **Cloudflare Workers Paid**  | El bundle (~9.5 MB) supera el límite de 1 MB del plan gratuito. Paid permite hasta 10 MB. |
+| **PostgreSQL accesible**     | Neon, Supabase, RDS, etc.                                                                 |
+| **Hyperdrive** (recomendado) | Pool de conexiones desde Workers hacia Postgres                                           |
+| **Secrets**                  | `AUTH_SECRET`, `DATABASE_URL`, `NEXT_PUBLIC_APP_BASE_URL`, `PAYMENT_PROVIDER`             |
 
 ## Configuración del proyecto
 
@@ -29,11 +29,11 @@ framework: Next.js 15 + @opennextjs/cloudflare
 2. Rama de producción: `main`.
 3. Build settings:
 
-| Campo | Comando |
-|-------|---------|
-| Build command | `pnpm install && pnpm prisma generate && pnpm build` |
-| Deploy command | `pnpm deploy` |
-| Non-production deploy | `pnpm upload` |
+| Campo                 | Comando                                              |
+| --------------------- | ---------------------------------------------------- |
+| Build command         | `pnpm install && pnpm prisma generate && pnpm build` |
+| Deploy command        | `pnpm deploy`                                        |
+| Non-production deploy | `pnpm upload`                                        |
 
 4. Variables de entorno (Production + Preview):
 
