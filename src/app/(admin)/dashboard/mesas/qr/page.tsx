@@ -43,11 +43,7 @@ export default async function TableQrSheetPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 print:grid-cols-2 print:gap-6">
         {tables.map((table) => {
-          const url = buildTableUrl(
-            baseUrl,
-            table.restaurant.slug,
-            table.qrToken,
-          );
+          const url = buildTableUrl(baseUrl, table.restaurant.slug, table.qrToken);
           return (
             <div
               key={table.id}

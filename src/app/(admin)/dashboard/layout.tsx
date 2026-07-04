@@ -75,7 +75,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </div>
         <nav aria-label="Secciones del panel" className="mx-auto max-w-6xl px-4 sm:px-6">
-          <ul className="flex gap-1 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <ul className="flex [scrollbar-width:none] gap-1 overflow-x-auto pb-2 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {navItems.map((item) => (
               <li key={item.href}>
                 <Link

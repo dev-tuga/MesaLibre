@@ -214,11 +214,7 @@ export default async function OpenTablesPage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {allTables.map((table) => {
-              const url = buildTableUrl(
-                baseUrl,
-                table.restaurant.slug,
-                table.qrToken,
-              );
+              const url = buildTableUrl(baseUrl, table.restaurant.slug, table.qrToken);
               return (
                 <div
                   key={table.id}

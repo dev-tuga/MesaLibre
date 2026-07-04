@@ -8,7 +8,12 @@ type ProductThumbnailProps = {
   className?: string;
 };
 
-export function ProductThumbnail({ imageUrl, categoryName, alt, className }: ProductThumbnailProps) {
+export function ProductThumbnail({
+  imageUrl,
+  categoryName,
+  alt,
+  className,
+}: ProductThumbnailProps) {
   const src = getProductImageUrl(imageUrl, categoryName);
 
   return (

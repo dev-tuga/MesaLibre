@@ -1,10 +1,8 @@
 const CATEGORY_IMAGES: Record<string, string> = {
-  "Para picar":
-    "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=160&h=160&fit=crop",
+  "Para picar": "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=160&h=160&fit=crop",
   "Platos de fondo":
     "https://images.unsplash.com/photo-1544025162-d76694265947?w=160&h=160&fit=crop",
-  Sándwiches:
-    "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=160&h=160&fit=crop",
+  Sándwiches: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=160&h=160&fit=crop",
   "Bebidas y bajativos":
     "https://images.unsplash.com/photo-1546173159-315724a31696?w=160&h=160&fit=crop",
 };
