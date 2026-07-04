@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,7 @@ export default async function TableBillPage({ params }: PageProps) {
 
   const order = await getOpenOrder(table.id);
   const bill = toBill(order);
-  const menuHref = `/r/${parsed.data.slug}/${parsed.data.table}`;
+  const billHref = `/r/${parsed.data.slug}/${parsed.data.table}/cuenta`;
 
   const paidClp = order?.payments.reduce((sum, p) => sum + p.amountClp, 0) ?? 0;
   const remainingClp = remainingBalance(bill.totalClp, paidClp);
@@ -41,16 +40,9 @@ export default async function TableBillPage({ params }: PageProps) {
       <AutoRefresh />
 
       <header className="flex items-center justify-between gap-3 py-5">
-        <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="icon" aria-label="Volver a la carta">
-            <Link href={menuHref}>
-              <ArrowLeft />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Cuenta</h1>
-            <p className="text-muted-foreground text-sm">{table.restaurant.name}</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Tu cuenta</h1>
+          <p className="text-muted-foreground text-sm">{table.restaurant.name}</p>
         </div>
         <Badge variant="secondary" className="text-sm">
           Mesa {table.number}
@@ -59,19 +51,14 @@ export default async function TableBillPage({ params }: PageProps) {
 
       {bill.itemCount === 0 ? (
         <div className="bg-card space-y-4 rounded-xl border p-6 text-center">
-          <p className="text-muted-foreground">Todavía no hay nada en la cuenta.</p>
-          <Button asChild variant="outline">
-            <Link href={menuHref}>Ver la carta</Link>
-          </Button>
+          <p className="text-muted-foreground">
+            Tu garzón todavía no ha cargado productos a esta mesa. La cuenta se actualizará
+            automáticamente cuando lleguen los pedidos.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          <BillLines
-            slug={parsed.data.slug}
-            qrToken={parsed.data.table}
-            bill={bill}
-            editable={!hasPayments}
-          />
+          <BillLines slug={parsed.data.slug} qrToken={parsed.data.table} bill={bill} editable={false} />
 
           {hasPayments ? (
             <div className="bg-card space-y-1 rounded-xl border p-4 text-sm">
@@ -88,14 +75,16 @@ export default async function TableBillPage({ params }: PageProps) {
 
           {remainingClp > 0 ? (
             <Button asChild size="lg" className="w-full">
-              <Link href={`${menuHref}/cuenta/pagar`}>
+              <Link href={`${billHref}/pagar`}>
                 Pagar {hasPayments ? formatClp(remainingClp) : "la cuenta"}
               </Link>
             </Button>
           ) : null}
 
           <p className="text-muted-foreground text-center text-sm">
-            La cuenta es compartida: todos en la mesa ven los mismos ítems.
+            {order && order.headCount > 1
+              ? `Mesa de ${order.headCount} comensales — la cuenta se actualiza en tiempo real.`
+              : "La cuenta se actualiza en tiempo real con lo que carga tu garzón."}
           </p>
         </div>
       )}

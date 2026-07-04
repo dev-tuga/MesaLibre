@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { QrCode } from "lucide-react";
+import { QrCode, UtensilsCrossed } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,7 @@ export default async function OpenTablesPage() {
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Pagado</TableHead>
                 <TableHead className="text-right">Por cobrar</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -88,6 +89,14 @@ export default async function OpenTablesPage() {
                       <Badge variant="secondary">Pagada</Badge>
                     )}
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/dashboard/mesas/${table.tableId}/pedido`}>
+                        <UtensilsCrossed className="size-4" />
+                        Pedido
+                      </Link>
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -113,6 +122,12 @@ export default async function OpenTablesPage() {
               >
                 <p className="font-semibold">Mesa {table.number}</p>
                 <TableQr url={url} className="w-28 [&_svg]:h-auto [&_svg]:w-full" />
+                <Button asChild size="sm" className="w-full">
+                  <Link href={`/dashboard/mesas/${table.id}/pedido`}>
+                    <UtensilsCrossed className="size-4" />
+                    Tomar pedido
+                  </Link>
+                </Button>
                 <a
                   href={url}
                   target="_blank"

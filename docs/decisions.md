@@ -205,3 +205,21 @@ clean on-screen/printed codes. Tokens are regenerated with 12 bytes of `crypto.r
 **Consequences:** QR generation cost lives on the server per render — negligible at this scale.
 If codes ever need client-side interactivity (e.g. download as PNG), a small client wrapper can
 reuse the same URLs.
+
+---
+
+## ADR-012: Waiter-only ordering with guest bill view
+
+**Status:** accepted
+
+**Context:** In a full-service restaurant the guest should not self-order from the digital menu;
+the waiter takes the order and the phone only shows the live bill. Split-payment UX also needs a
+reliable party size (`headCount`) captured at the table.
+
+**Decision:** Staff add items via `/dashboard/mesas/[tableId]/pedido` (authenticated). Guests
+scanning the QR land on `/cuenta` (real-time bill, 5s polling). `Order.headCount` is set by the
+waiter when seating. Public `addItemToOrder` / `removeOrderItem` actions are disabled. QR URLs
+encode the bill route directly.
+
+**Consequences:** Admin must operate the ordering UI; guests need network access only for viewing
+and paying. `headCount` feeds the payment screen defaults (see ADR-013).
